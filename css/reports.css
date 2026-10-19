@@ -1,0 +1,34 @@
+.rep-range {
+  display: grid; gap: 10px;
+  grid-template-columns: 1fr 1fr;
+  align-items: end;
+}
+.rep-summary {
+  display: grid; gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+.rep-sum-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-md); padding: 12px;
+}
+.rep-sum-label { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
+.rep-sum-value { font-size: 18px; font-weight: 700; }
+.rep-sum-value.pos { color: var(--success); }
+.rep-sum-value.neg { color: var(--error); }
+
+.rep-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.rep-table th, .rep-table td {
+  padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: left;
+}
+.rep-table th {
+  font-size: 11px; text-transform: uppercase; letter-spacing: .04em;
+  color: var(--text-muted); font-weight: 600;
+}
+.rep-table .num { text-align: right; white-space: nowrap; }
+.rep-table tr:last-child td { border-bottom: none; }
+
+.rep-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-md); padding: 16px;
+}
+.rep-card-title { font-size: 14px; font-weight: 600; margin-bottom: 10px; }

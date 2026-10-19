@@ -1,0 +1,61 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Slay ERP Diagnostics</title>
+<style>
+body{font-family:ui-monospace,Menlo,monospace;padding:14px;background:#F8FAFC;font-size:13px;color:#111827}
+h3{margin:0 0 10px}
+.ok{color:#16A34A}.err{color:#DC2626}.info{color:#64748B}
+#log{background:#fff;border:1px solid #E5E7EB;border-radius:8px;padding:10px;white-space:pre-wrap;word-break:break-all;margin-top:10px}
+</style></head>
+<body>
+<h3>Slay ERP Diagnostics</h3>
+<div id="status" class="info">Running...</div>
+<div id="log"></div>
+<script>
+const log = (msg, cls) => {
+  const p = document.getElementById('log');
+  const d = document.createElement('div');
+  if (cls) d.className = cls;
+  d.textContent = msg;
+  p.appendChild(d);
+};
+const files = [
+  './js/config.js',
+  './js/supabase.js',
+  './js/state.js',
+  './js/format.js',
+  './js/i18n.js',
+  './js/ui.js',
+  './js/router.js',
+  './js/auth.js',
+  './js/shell.js',
+  './js/pages/login.js',
+  './js/pages/signup.js',
+  './js/pages/forgot.js',
+  './js/pages/check-email.js',
+  './js/pages/reset.js',
+  './js/pages/switcher.js',
+  './js/pages/onboarding.js',
+  './js/pages/dashboard.js',
+  './js/pages/placeholder.js',
+  './js/pages/notfound.js',
+  './js/api/businesses.js',
+  './js/app.js'
+];
+(async () => {
+  for (const f of files) {
+    try {
+      await import(f);
+      log('OK   ' + f, 'ok');
+    } catch (e) {
+      log('ERR  ' + f + '  ->  ' + (e && e.message ? e.message : e), 'err');
+    }
+  }
+  document.getElementById('status').textContent = 'Done. See results below.';
+})();
+window.addEventListener('error', e => log('window.onerror: ' + e.message, 'err'));
+window.addEventListener('unhandledrejection', e => {
+  const r = e.reason;
+  log('unhandledrejection: ' + (r && r.message ? r.message : r), 'err');
+});
+</script>
+</body></html>

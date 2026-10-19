@@ -1,0 +1,17 @@
+.exp-list { display: flex; flex-direction: column; gap: 10px; }
+.exp-card {
+  display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-md); padding: 12px;
+}
+.exp-cat { font-weight: 600; }
+.exp-meta { font-size: 12px; color: var(--text-muted); }
+.exp-amount { font-weight: 700; font-size: 15px; color: var(--error); }
+.exp-right { text-align: right; display: flex; flex-direction: column; gap: 4px; align-items: flex-end; }
+.exp-total {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-md); padding: 16px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.exp-total-label { font-size: 13px; color: var(--text-muted); }
+.exp-total-value { font-size: 22px; font-weight: 700; color: var(--error); }

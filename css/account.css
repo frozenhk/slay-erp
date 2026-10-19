@@ -1,0 +1,68 @@
+/* Auth screens */
+.auth-wrap {
+  display: flex;
+  justify-content: center;
+  padding: var(--sp-4) 0;
+}
+.auth-card {
+  width: 100%;
+  max-width: 400px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--sp-5);
+  box-shadow: var(--shadow-sm);
+}
+.auth-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+}
+.auth-brand img { width: 36px; height: 36px; }
+.auth-brand h1 { font-size: 22px; margin: 0; color: var(--primary); }
+.auth-sub {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+  margin-bottom: var(--sp-4);
+}
+.auth-form { display: flex; flex-direction: column; gap: var(--sp-3); }
+.auth-links {
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-top: var(--sp-3);
+}
+.auth-links a { color: var(--primary); }
+
+/* Topbar avatar button */
+.avatar-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-family: inherit;
+}
+.avatar-btn:hover { filter: brightness(0.95); }
+.avatar-btn:active { transform: scale(0.96); }
+
+/* Business switcher cards */
+.switcher-card {
+  cursor: pointer;
+  transition: border-color .15s, box-shadow .15s;
+}
+.switcher-card:hover {
+  border-color: var(--primary);
+  box-shadow: var(--shadow-md);
+}

@@ -1,0 +1,254 @@
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--bg);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 { margin: 0 0 var(--sp-2); font-weight: 600; line-height: 1.25; }
+h1 { font-size: 22px; }
+h2 { font-size: 18px; }
+h3 { font-size: 16px; }
+p { margin: 0 0 var(--sp-3); }
+a { color: var(--primary); text-decoration: none; }
+a:hover { text-decoration: underline; }
+button { font-family: inherit; }
+img, svg { max-width: 100%; display: block; }
+
+/* ---------- App shell ---------- */
+.app-shell {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: var(--topbar-h) 1fr;
+  grid-template-areas:
+    "topbar"
+    "page";
+}
+.topbar { grid-area: topbar; }
+.page {
+  grid-area: page;
+  padding: var(--sp-4);
+}
+
+/* ---------- Topbar ---------- */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  padding: 0 var(--sp-3);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  height: var(--topbar-h);
+  position: sticky;
+  top: 0;
+  z-index: 90;
+}
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+.topbar-title {
+  font-size: 16px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.topbar-actions { display: flex; align-items: center; gap: var(--sp-2); }
+
+.hamburger-btn {
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  padding: 0;
+}
+.hamburger-btn:hover { background: var(--surface-2); }
+
+/* ---------- Sidebar (drawer on mobile) ---------- */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: var(--drawer-w);
+  background: var(--sidebar-bg);
+  color: var(--sidebar-text);
+  z-index: 200;
+  transform: translateX(-100%);
+  transition: transform .22s ease;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: var(--sp-4) var(--sp-3) var(--sp-5);
+}
+body.drawer-open .sidebar { transform: translateX(0); }
+
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15,23,42,.55);
+  z-index: 150;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .22s ease;
+}
+body.drawer-open .drawer-backdrop {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Sidebar: brand row */
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  padding: 0 var(--sp-2) var(--sp-4);
+}
+.sidebar-brand-left {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  text-decoration: none;
+  color: var(--sidebar-text-active);
+  font-weight: 700;
+  font-size: 18px;
+}
+.sidebar-brand-left:hover { text-decoration: none; }
+.sidebar-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--primary);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.sidebar-close {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  color: var(--sidebar-text);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.sidebar-close:hover { background: var(--sidebar-hover); color: var(--sidebar-text-active); }
+
+/* Sidebar: business block */
+.sidebar-biz {
+  padding: var(--sp-2) var(--sp-2) var(--sp-4);
+  border-bottom: 1px solid var(--sidebar-border);
+  margin-bottom: var(--sp-3);
+}
+.sidebar-biz-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--sidebar-label);
+  margin-bottom: 4px;
+}
+.sidebar-biz-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--sidebar-text-active);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Sidebar: nav */
+.navlist {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.navlink {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  color: var(--sidebar-text);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  min-height: 44px;
+  font-family: inherit;
+}
+.navlink:hover { background: var(--sidebar-hover); color: var(--sidebar-text-active); text-decoration: none; }
+.navlink.active { background: var(--sidebar-active); color: #fff; }
+.navlink.active:hover { background: var(--primary-dark); color: #fff; }
+.navlink svg { flex-shrink: 0; }
+
+/* ---------- Desktop: permanent sidebar ---------- */
+@media (min-width: 900px) {
+  .app-shell {
+    grid-template-columns: var(--sidebar-w) 1fr;
+    grid-template-rows: var(--topbar-h) 1fr;
+    grid-template-areas:
+      "sidebar topbar"
+      "sidebar page";
+  }
+  .sidebar {
+    grid-area: sidebar;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    transform: none;
+    width: auto;
+  }
+  body.drawer-open .sidebar { transform: none; }
+  .hamburger-btn { display: none; }
+  .drawer-backdrop { display: none; }
+  .sidebar-close { display: none; }
+  .page { padding: var(--sp-5); }
+}
+
+/* ---------- Utility ---------- */
+.container { max-width: 1200px; margin: 0 auto; }
+.muted { color: var(--text-muted); }
+.center { text-align: center; }
+.hidden { display: none !important; }
+.row { display: flex; gap: var(--sp-3); align-items: center; }
+.row-between {
+  display: flex;
+  gap: var(--sp-3);
+  align-items: center;
+  justify-content: space-between;
+}
+.col { display: flex; flex-direction: column; gap: var(--sp-3); }
+.grid-2 { display: grid; gap: var(--sp-3); grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
