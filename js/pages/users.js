@@ -4,6 +4,7 @@ import { t } from '../i18n.js';
 import { state } from '../state.js';
 import { initials } from '../format.js';
 import { canManageUsers } from '../permissions.js';
+import { guardFeature } from '../lib/entitlements.js';
 import {
   listMembers, updateMemberRole, removeMember,
   listInvitations, createInvitation, cancelInvitation,
@@ -35,7 +36,11 @@ export async function usersPage(container) {
   }
 
   const inviteBtn = el('button', { class: 'btn btn-primary', type: 'button', text: '+ ' + t.users_invite });
-  inviteBtn.addEventListener('click', () => openInvite(businessId, load));
+  inviteBtn.addEventListener('click', async () => {
+    const ok = await guardFeature(businessId, 'users', t, toast);
+    if (!ok) return;
+    openInvite(businessId, load);
+  });
   wrap.appendChild(inviteBtn);
 
   const membersCard = el('div', { class: 'col' });

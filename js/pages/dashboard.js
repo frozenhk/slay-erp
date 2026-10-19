@@ -23,11 +23,24 @@ export async function dashboard(container) {
 
   const biz = state.currentBusiness || {};
   const role = state.role || 'member';
+  const status = biz.subscription_status || 'trialing';
 
   const head = el('div');
   head.appendChild(el('h1', { text: biz.name || t.nav_dashboard }));
   head.appendChild(el('p', { class: 'muted', text: t.dash_signed_in_as + ' ' + role }));
   wrap.appendChild(head);
+
+  // Subscription warning banner
+  if (status === 'expired' || status === 'past_due' || status === 'grace_period' || status === 'suspended') {
+    const alert = el('div', {
+      class: 'card',
+      style: 'background:#FEF2F2;border-color:#FECACA;color:#991B1B;cursor:pointer;padding:12px;',
+    });
+    alert.appendChild(el('div', { style: 'font-weight:700;font-size:14px;', text: 'Subscription inactive' }));
+    alert.appendChild(el('div', { style: 'font-size:13px;margin-top:2px;', text: 'Your subscription is ' + status + '. Please renew to continue making sales.' }));
+    alert.addEventListener('click', () => navigate('subscription'));
+    wrap.appendChild(alert);
+  }
 
   const loading = el('div', { class: 'dash-grid' });
   for (let i = 0; i < 4; i++) loading.appendChild(el('div', { class: 'skeleton', style: 'height:100px;' }));
@@ -69,7 +82,6 @@ export async function dashboard(container) {
   quick.appendChild(newProd);
   wrap.appendChild(quick);
 
-  // ---- MONEY OWED TO YOU (credit awareness) ----
   if (outstanding && outstanding.length) {
     let overdueCount = 0, dueSoonCount = 0, totalOutstanding = 0;
     for (const s of outstanding) {
@@ -93,7 +105,6 @@ export async function dashboard(container) {
     statGrid.appendChild(metric(t.debt_total_outstanding, money(totalOutstanding), totalOutstanding > 0 ? 'warn' : 'success'));
     debtCard.appendChild(statGrid);
 
-    // Top 5 most urgent
     const sorted = outstanding.slice().sort((a, b) => {
       const sa = dueStatus(a.due_date), sb = dueStatus(b.due_date);
       const wa = sa.level === 'overdue' ? 0 : sa.level === 'today' ? 1 : sa.level === 'soon' ? 2 : 3;

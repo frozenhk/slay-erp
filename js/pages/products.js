@@ -1,10 +1,11 @@
-import { el } from '../ui.js';
+import { el, toast } from '../ui.js';
 import { navigate, parseHash } from '../router.js';
 import { t } from '../i18n.js';
 import { state } from '../state.js';
 import { money } from '../format.js';
 import { listProducts, listCategories, getStockByVariant } from '../api/products.js';
 import { openProductModal } from './product-form.js';
+import { guardFeature } from '../lib/entitlements.js';
 
 export async function productsPage(container, opts) {
   const cfg = opts || {};
@@ -23,7 +24,13 @@ export async function productsPage(container, opts) {
   const header = el('div', { class: 'row-between' });
   header.appendChild(el('h1', { text: t.nav_products }));
   const addBtn = el('button', { class: 'btn btn-primary', type: 'button', text: t.prod_add });
-  addBtn.addEventListener('click', () => openProductModal({ mode: 'create' }, load));
+  
+  addBtn.addEventListener('click', async () => {
+    const ok = await guardFeature(businessId, 'products', t, toast);
+    if (!ok) return;
+    openProductModal({ mode: 'create' }, load);
+  });
+  
   header.appendChild(addBtn);
   wrap.appendChild(header);
 
@@ -63,7 +70,11 @@ export async function productsPage(container, opts) {
           el('div', { class: 'state-text', text: t.prod_empty_text }),
         ]);
         const b = el('button', { class: 'btn btn-primary', type: 'button', text: t.prod_add });
-        b.addEventListener('click', () => openProductModal({ mode: 'create' }, load));
+        b.addEventListener('click', async () => {
+          const ok = await guardFeature(businessId, 'products', t, toast);
+          if (!ok) return;
+          openProductModal({ mode: 'create' }, load);
+        });
         st.appendChild(b);
         listBox.appendChild(st);
         return;
@@ -96,11 +107,12 @@ export async function productsPage(container, opts) {
 
   await load();
 
-  // If the URL asks for new/edit, open the modal on top of the products list.
   if (!cfg.skipAutoModal) {
     const { params } = parseHash();
     if (params && params[0] === 'new') {
-      openProductModal({ mode: 'create' }, () => navigate('products'));
+      const ok = await guardFeature(businessId, 'products', t, toast);
+      if (ok) openProductModal({ mode: 'create' }, () => navigate('products'));
+      else navigate('products');
     } else if (params && params[0] === 'edit' && params[1]) {
       openProductModal({ mode: 'edit', id: params[1] }, () => navigate('products'));
     }

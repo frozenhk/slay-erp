@@ -3,6 +3,7 @@ import { navigate } from '../router.js';
 import { t } from '../i18n.js';
 import { state } from '../state.js';
 import { listLocations, createLocation, updateLocation } from '../api/locations.js';
+import { guardFeature } from '../lib/entitlements.js';
 
 export async function locationsPage(container) {
   const businessId = state.currentBusiness && state.currentBusiness.id;
@@ -23,7 +24,11 @@ export async function locationsPage(container) {
   const addBtn = el('button', {
     class: 'btn btn-primary', type: 'button', text: t.inv_add_location,
   });
-  addBtn.addEventListener('click', () => openLocationModal(null, businessId, reload));
+  addBtn.addEventListener('click', async () => {
+    const ok = await guardFeature(businessId, 'locations', t, toast);
+    if (!ok) return;
+    openLocationModal(null, businessId, reload);
+  });
   wrap.appendChild(addBtn);
 
   const list = el('div', { class: 'prod-list' });
