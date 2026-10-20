@@ -143,7 +143,13 @@ function registerRoutes() {
   register('notifications', notificationsPage);
   register('subscription', subscriptionPage);
   register('pricing', pricingPage);
-  register('admin/businesses', adminBusinessesPage);
+  
+  // FIXED: Admin routing
+  register('admin', async (c, p) => {
+    if (p && p[0] === 'businesses') return adminBusinessesPage(c);
+    return navigate('more');
+  });
+  
   register('*', notfound);
 }
 

@@ -9,8 +9,7 @@ import { unreadCount } from './lib/notifications.js';
 
 const ICONS = {
   home: ['M3 10.5 12 3l9 7.5', 'M5 9.5V21h14V9.5'],
-  cart: ['M3 5h2l2.4 11.2a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 2-1.5L21 8H6',
-    'M10 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z', 'M17 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z'],
+  cart: ['M3 5h2l2.4 11.2a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 2-1.5L21 8H6', 'M10 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z', 'M17 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z'],
   tag: ['M20.6 13.4 11 3.8A2 2 0 0 0 9.6 3.2H4v5.6a2 2 0 0 0 .6 1.4l9.6 9.6a2 2 0 0 0 2.8 0l3.6-3.6a2 2 0 0 0 0-2.8Z', 'M7.5 7.5h.01'],
   box: ['M3 7.5 12 3l9 4.5-9 4.5-9-4.5Z', 'M3 7.5V17l9 4.5 9-4.5V7.5', 'M12 12v9.5'],
   user: ['M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z', 'M4 21a8 8 0 0 1 16 0'],
@@ -19,10 +18,7 @@ const ICONS = {
   close: ['M6 6l12 12', 'M18 6 6 18'],
   file: ['M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z', 'M14 2v6h6', 'M9 13h6', 'M9 17h6'],
   card: ['M2 7h20v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2Z', 'M2 7V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v2', 'M6 15h4'],
-  coins: ['M12 8c4.97 0 9-1.34 9-3s-4.03-3-9-3-9 1.34-9 3 4.03 3 9 3Z',
-    'M21 12c0 1.66-4.03 3-9 3s-9-1.34-9-3',
-    'M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5'],
-  // FIXED: Full path for the settings icon
+  coins: ['M12 8c4.97 0 9-1.34 9-3s-4.03-3-9-3-9 1.34-9 3 4.03 3 9 3Z', 'M21 12c0 1.66-4.03 3-9 3s-9-1.34-9-3', 'M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5'],
   cog: ['M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z', 'M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z'],
   bell: ['M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9', 'M13.7 21a2 2 0 0 1-3.4 0'],
   dot: ['M12 12h.01'],
@@ -50,7 +46,7 @@ function getTitles() {
     more: t.nav_more, invoices: t.nav_invoices, payments: t.nav_payments,
     expenses: t.nav_expenses, users: t.users_title, settings: t.settings_title,
     notifications: t.notif_title, subscription: t.sub_title, pricing: t.sub_pricing_title,
-    'admin/businesses': t.admin_businesses_title,
+    admin: t.admin_businesses_title, // <--- ADDED ADMIN TITLE
     login: t.auth_sign_in, signup: t.auth_sign_up, forgot: t.auth_forgot_title,
     'check-email': t.auth_check_email_title, reset: t.auth_forgot_title,
     switcher: t.biz_choose, onboarding: t.biz_welcome,
@@ -125,19 +121,14 @@ function buildSidebar() {
 function buildBellButton() {
   const wrap = el('div', { style: 'position:relative;' });
   const btn = el('button', {
-    class: 'hamburger-btn',
-    type: 'button',
-    'aria-label': t.notif_bell_label,
-    title: t.notif_bell_label,
-    id: 'bell-btn',
+    class: 'hamburger-btn', type: 'button', 'aria-label': t.notif_bell_label, title: t.notif_bell_label, id: 'bell-btn',
   });
   btn.appendChild(svgIcon('bell', 22));
   btn.addEventListener('click', () => navigate('notifications'));
   wrap.appendChild(btn);
 
   const badge = el('span', {
-    id: 'bell-badge',
-    style: 'display:none;position:absolute;top:-2px;right:-2px;background:var(--error);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;min-width:18px;text-align:center;',
+    id: 'bell-badge', style: 'display:none;position:absolute;top:-2px;right:-2px;background:var(--error);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;min-width:18px;text-align:center;',
   });
   wrap.appendChild(badge);
   return wrap;
