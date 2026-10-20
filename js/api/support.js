@@ -20,16 +20,15 @@ export async function sendMessage(ticketId, senderId, senderType, message) {
 }
 
 export async function markMessagesRead(ticketId, senderType) {
-  // Mark messages as read if they were sent by the OTHER person
   const otherType = senderType === 'user' ? 'admin' : 'user';
   await supabase.from('support_messages').update({ is_read: true }).eq('ticket_id', ticketId).eq('sender_type', otherType).eq('is_read', false);
 }
 
-export async function getUnreadCount(senderType, ticketId = null) {
+// CRITICAL FIX: Now requires ticketId to prevent counting other people's messages
+export async function getUnreadCount(senderType, ticketId) {
+  if (!ticketId) return 0;
   const otherType = senderType === 'user' ? 'admin' : 'user';
-  let query = supabase.from('support_messages').select('*', { count: 'exact', head: true }).eq('sender_type', otherType).eq('is_read', false);
-  if (ticketId) query = query.eq('ticket_id', ticketId);
-  const { count, error } = await query;
+  const { count, error } = await supabase.from('support_messages').select('*', { count: 'exact', head: true }).eq('ticket_id', ticketId).eq('sender_type', otherType).eq('is_read', false);
   return count || 0;
 }
 

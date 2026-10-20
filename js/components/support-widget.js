@@ -37,32 +37,60 @@ export function buildSupportWidget() {
   document.body.appendChild(fab);
   document.body.appendChild(chat);
 
-  // Draggable logic (same as before)
-  let isDragging = false, hasMoved = false, startX, startY, initialX, initialY;
+  // --- FIXED DRAG & TAP LOGIC ---
+  let isDragging = false;
+  let hasMoved = false;
+  let startX, startY, initialX, initialY;
+
   const savedX = localStorage.getItem('slay-fab-x'), savedY = localStorage.getItem('slay-fab-y');
   if (savedX !== null && savedY !== null) { fab.style.right = 'auto'; fab.style.bottom = 'auto'; fab.style.left = savedX + 'px'; fab.style.top = savedY + 'px'; }
-  fab.addEventListener('mousedown', (e) => { startX=e.clientX; startY=e.clientY; initialX=fab.offsetLeft; initialY=fab.offsetTop; isDragging=true; hasMoved=false; });
-  fab.addEventListener('touchstart', (e) => { startX=e.touches[0].clientX; startY=e.touches[0].clientY; initialX=fab.offsetLeft; initialY=fab.offsetTop; isDragging=true; hasMoved=false; }, {passive:true});
+  
+  const onStart = (e) => {
+    startX = e.type === 'mousedown' ? e.clientX : e.touches[0].clientX;
+    startY = e.type === 'mousedown' ? e.clientY : e.touches[0].clientY;
+    initialX = fab.offsetLeft; initialY = fab.offsetTop;
+    isDragging = true; hasMoved = false;
+  };
+  
   const onMove = (e) => {
     if(!isDragging) return;
-    let cx = e.type==='mousemove'?e.clientX:e.touches[0].clientX;
-    let cy = e.type==='mousemove'?e.clientY:e.touches[0].clientY;
+    let cx = e.type === 'mousemove' ? e.clientX : e.touches[0].clientX;
+    let cy = e.type === 'mousemove' ? e.clientY : e.touches[0].clientY;
     if(Math.abs(cx-startX)>5 || Math.abs(cy-startY)>5) {
-      hasMoved=true; fab.style.right='auto'; fab.style.bottom='auto';
+      hasMoved = true; 
+      fab.style.right='auto'; fab.style.bottom='auto';
       fab.style.left = Math.max(10, Math.min(initialX+cx-startX, window.innerWidth-66))+'px';
       fab.style.top = Math.max(10, Math.min(initialY+cy-startY, window.innerHeight-66))+'px';
     }
   };
-  document.addEventListener('mousemove', onMove);
-  document.addEventListener('touchmove', onMove, {passive:false});
+  
   const onEnd = () => {
-    if(!isDragging) return; isDragging=false;
-    if(!hasMoved) chat.classList.toggle('open');
-    else { localStorage.setItem('slay-fab-x', fab.offsetLeft); localStorage.setItem('slay-fab-y', fab.offsetTop); }
+    if(!isDragging) return; 
+    isDragging = false;
+    if(hasMoved) { 
+      localStorage.setItem('slay-fab-x', fab.offsetLeft); 
+      localStorage.setItem('slay-fab-y', fab.offsetTop); 
+    }
   };
+
+  fab.addEventListener('mousedown', onStart);
+  document.addEventListener('mousemove', onMove);
   document.addEventListener('mouseup', onEnd);
+  fab.addEventListener('touchstart', onStart, {passive: true});
+  document.addEventListener('touchmove', onMove, {passive: false});
   document.addEventListener('touchend', onEnd);
 
+  // Separate click event so tapping always works
+  fab.addEventListener('click', (e) => {
+    if (!hasMoved) { // Only open if we didn't just drag it
+      chat.classList.toggle('open');
+      if (chat.classList.contains('open') && tabChat.classList.contains('active')) {
+        loadMessages(); // Refresh messages when opened
+      }
+    }
+  });
+
+  // --- CHAT LOGIC ---
   const faqs = [
     { q: 'How do I add a product?', a: 'Go to Products -> Add Product.' },
     { q: 'How do I receive stock?', a: 'Go to Inventory -> Adjust -> Receive Stock.' }
@@ -81,12 +109,12 @@ export function buildSupportWidget() {
   let currentTicketId = null;
 
   async function checkUnread() {
-    // If chat is open and on the Live Chat tab, we are reading it
-    if (chat.classList.contains('open') && tabChat.classList.contains('active')) {
+    // Only check if we have a ticket and the chat is closed
+    if (!currentTicketId || (chat.classList.contains('open') && tabChat.classList.contains('active'))) {
       badge.style.display = 'none';
       return;
     }
-    const count = await getUnreadCount('user');
+    const count = await getUnreadCount('user', currentTicketId);
     if (count > 0) { badge.style.display = 'block'; badge.textContent = count; }
     else { badge.style.display = 'none'; }
   }
@@ -103,10 +131,15 @@ export function buildSupportWidget() {
     });
     body.scrollTop = body.scrollHeight;
     
-    // Mark as read and update badge immediately
     await markMessagesRead(currentTicketId, 'user');
     await checkUnread();
   }
+
+  // Initialize the ticket ID immediately on load so we can check unread
+  getOrCreateTicket(state.currentBusiness.id, state.user.id, 'App Support').then(id => {
+    currentTicketId = id;
+    checkUnread();
+  });
 
   tabChat.onclick = async () => {
     tabChat.classList.add('active'); tabFaq.classList.remove('active');
@@ -126,7 +159,6 @@ export function buildSupportWidget() {
 
   tabFaq.onclick = () => { tabFaq.classList.add('active'); tabChat.classList.remove('active'); inputArea.style.display = 'none'; renderFaq(); };
   
-  setInterval(checkUnread, 2000); // Poll badge every 2 seconds
-  checkUnread();
+  setInterval(checkUnread, 3000);
   renderFaq();
 }
