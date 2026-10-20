@@ -10,6 +10,7 @@ export function buildSupportWidget() {
   
   const chat = el('div', { id: 'support-chat', class: 'support-chat' });
   
+  // Header
   const header = el('div', { class: 'chat-header' });
   header.appendChild(el('h3', { text: 'Help & Support' }));
   const closeBtn = el('button', { class: 'chat-close', text: '×' });
@@ -17,15 +18,18 @@ export function buildSupportWidget() {
   header.appendChild(closeBtn);
   chat.appendChild(header);
 
+  // Tabs
   const tabs = el('div', { class: 'chat-tabs' });
   const tabFaq = el('div', { class: 'chat-tab active', text: 'FAQ' });
   const tabChat = el('div', { class: 'chat-tab', text: 'Live Chat' });
   tabs.appendChild(tabFaq); tabs.appendChild(tabChat);
   chat.appendChild(tabs);
 
+  // Body
   const body = el('div', { class: 'chat-body' });
   chat.appendChild(body);
 
+  // Input (hidden by default)
   const inputArea = el('div', { class: 'chat-input-area', style: 'display:none;' });
   const input = el('input', { type: 'text', placeholder: 'Type your message...' });
   const sendBtn = el('button', { class: 'btn btn-primary' }, '→');
@@ -35,8 +39,87 @@ export function buildSupportWidget() {
   document.body.appendChild(fab);
   document.body.appendChild(chat);
 
-  fab.onclick = () => chat.classList.toggle('open');
+  // --- DRAG AND DROP LOGIC ---
+  let isDragging = false;
+  let hasMoved = false;
+  let startX, startY, initialX, initialY;
+  const dragThreshold = 5; // pixels
 
+  // Restore saved position
+  const savedX = localStorage.getItem('slay-fab-x');
+  const savedY = localStorage.getItem('slay-fab-y');
+  if (savedX !== null && savedY !== null) {
+    fab.style.right = 'auto';
+    fab.style.bottom = 'auto';
+    fab.style.left = savedX + 'px';
+    fab.style.top = savedY + 'px';
+  }
+
+  function dragStart(e) {
+    if (e.type === 'mousedown') {
+      startX = e.clientX; startY = e.clientY;
+    } else {
+      startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+    }
+    initialX = fab.offsetLeft;
+    initialY = fab.offsetTop;
+    isDragging = true;
+    hasMoved = false;
+  }
+
+  function dragMove(e) {
+    if (!isDragging) return;
+    let currentX, currentY;
+    if (e.type === 'mousemove') {
+      currentX = e.clientX; currentY = e.clientY;
+    } else {
+      currentX = e.touches[0].clientX; currentY = e.touches[0].clientY;
+      e.preventDefault(); // Prevent scrolling while dragging
+    }
+
+    const dx = currentX - startX;
+    const dy = currentY - startY;
+
+    if (Math.abs(dx) > dragThreshold || Math.abs(dy) > dragThreshold) {
+      hasMoved = true;
+      fab.style.right = 'auto';
+      fab.style.bottom = 'auto';
+      
+      let newX = initialX + dx;
+      let newY = initialY + dy;
+
+      // Keep inside window bounds
+      newX = Math.max(10, Math.min(newX, window.innerWidth - 66));
+      newY = Math.max(10, Math.min(newY, window.innerHeight - 66));
+
+      fab.style.left = newX + 'px';
+      fab.style.top = newY + 'px';
+    }
+  }
+
+  function dragEnd(e) {
+    if (!isDragging) return;
+    isDragging = false;
+
+    if (!hasMoved) {
+      // It was a click, not a drag
+      chat.classList.toggle('open');
+    } else {
+      // Save position
+      localStorage.setItem('slay-fab-x', fab.offsetLeft);
+      localStorage.setItem('slay-fab-y', fab.offsetTop);
+    }
+  }
+
+  fab.addEventListener('mousedown', dragStart);
+  document.addEventListener('mousemove', dragMove);
+  document.addEventListener('mouseup', dragEnd);
+
+  fab.addEventListener('touchstart', dragStart, { passive: true });
+  document.addEventListener('touchmove', dragMove, { passive: false });
+  document.addEventListener('touchend', dragEnd);
+
+  // --- CHAT LOGIC ---
   const faqs = [
     { q: 'How do I add a product?', a: 'Go to Products -> Add Product. Fill in the name and price, then save.' },
     { q: 'How do I receive stock?', a: 'Go to Inventory, find the product, tap Adjust, and select "Receive Stock".' },
