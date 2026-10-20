@@ -1,4 +1,4 @@
-const CACHE = 'slay-erp-v17'; // We will bump this version when needed
+const CACHE = 'slay-erp-v18'; // We will bump this version when needed
 const SHELL = [
   './', './index.html', './manifest.json', './assets/logo.svg',
   './css/tokens.css', './css/base.css', './css/components.css', './css/account.css',
