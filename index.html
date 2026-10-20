@@ -8,20 +8,20 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./css/tokens.css?v=41">
-<link rel="stylesheet" href="./css/base.css?v=41">
-<link rel="stylesheet" href="./css/components.css?v=41">
-<link rel="stylesheet" href="./css/account.css?v=41">
-<link rel="stylesheet" href="./css/products.css?v=41">
-<link rel="stylesheet" href="./css/inventory.css?v=41">
-<link rel="stylesheet" href="./css/customers.css?v=41">
-<link rel="stylesheet" href="./css/sales.css?v=41">
-<link rel="stylesheet" href="./css/invoice.css?v=41">
-<link rel="stylesheet" href="./css/dashboard.css?v=41">
-<link rel="stylesheet" href="./css/expenses.css?v=41">
-<link rel="stylesheet" href="./css/reports.css?v=41">
-<link rel="stylesheet" href="./css/users.css?v=41">
-<link rel="stylesheet" href="./css/support.css?v=41">
+<link rel="stylesheet" href="./css/tokens.css?v=42">
+<link rel="stylesheet" href="./css/base.css?v=42">
+<link rel="stylesheet" href="./css/components.css?v=42">
+<link rel="stylesheet" href="./css/account.css?v=42">
+<link rel="stylesheet" href="./css/products.css?v=42">
+<link rel="stylesheet" href="./css/inventory.css?v=42">
+<link rel="stylesheet" href="./css/customers.css?v=42">
+<link rel="stylesheet" href="./css/sales.css?v=42">
+<link rel="stylesheet" href="./css/invoice.css?v=42">
+<link rel="stylesheet" href="./css/dashboard.css?v=42">
+<link rel="stylesheet" href="./css/expenses.css?v=42">
+<link rel="stylesheet" href="./css/reports.css?v=42">
+<link rel="stylesheet" href="./css/users.css?v=42">
+<link rel="stylesheet" href="./css/support.css?v=42">
 <link rel="manifest" href="./manifest.json">
 <link rel="icon" href="./assets/logo.svg" type="image/svg+xml">
 </head>
@@ -38,6 +38,7 @@
 <div id="toasts" class="toasts" aria-live="polite" aria-atomic="true"></div>
 <div id="modal-root"></div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <script>
 (function(){
   // 1. KILL ALL SERVICE WORKERS
@@ -62,6 +63,6 @@
   function hide(){ box.style.opacity = '0'; setTimeout(function(){ if (box.style.opacity === '0') { box.style.display = 'none'; box.textContent = ''; } }, 300); }
 })();
 </script>
-<script type="module" src="./js/app.js?v=41"></script>
+<script type="module" src="./js/app.js?v=42"></script>
 </body>
 </html>
