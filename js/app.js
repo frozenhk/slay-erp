@@ -218,7 +218,7 @@ async function boot() {
   startRouter();
 
   if (state.user) {
-    setTimeout(showInvitePopup, 1500);
+    showInvitePopup(); setInterval(showInvitePopup, 5000);
     buildSupportWidget();
   }
 
