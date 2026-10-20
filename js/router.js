@@ -1,3 +1,5 @@
+import { showLoader, hideLoader } from './ui.js';
+
 const routes = new Map();
 let onNavigate = null;
 
@@ -37,6 +39,11 @@ async function renderCurrent() {
   const container = document.getElementById('page');
   if (!container || typeof handler !== 'function') return;
 
+  showLoader(); // Start loading bar
+
+  // Small delay to ensure the loader shows before heavy JS blocks the thread
+  await new Promise((r) => setTimeout(r, 10));
+
   while (container.firstChild) container.removeChild(container.firstChild);
 
   try {
@@ -56,6 +63,8 @@ async function renderCurrent() {
     wrap.appendChild(msg);
     container.appendChild(wrap);
   }
+
+  hideLoader(); // Stop loading bar
 
   if (typeof onNavigate === 'function') onNavigate(path);
 }

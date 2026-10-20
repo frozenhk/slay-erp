@@ -60,6 +60,46 @@ export function toast(message, type, ms) {
   }, life);
 }
 
+// --- Global Loading Bar ---
+let loaderTimeout = null;
+export function showLoader() {
+  const bar = document.getElementById('global-loader');
+  if (!bar) return;
+  bar.classList.add('active');
+  bar.style.width = '20%';
+  if (loaderTimeout) clearTimeout(loaderTimeout);
+  loaderTimeout = setTimeout(() => { bar.style.width = '80%'; }, 300);
+}
+
+export function hideLoader() {
+  const bar = document.getElementById('global-loader');
+  if (!bar) return;
+  if (loaderTimeout) clearTimeout(loaderTimeout);
+  bar.style.width = '100%';
+  setTimeout(() => {
+    bar.classList.remove('active');
+    setTimeout(() => { bar.style.width = '0%'; }, 300);
+  }, 200);
+}
+
+// --- Button Loading State ---
+const originalBtnText = new WeakMap();
+export function setButtonLoading(btn, isLoading, customText) {
+  if (!btn) return;
+  if (isLoading) {
+    if (!originalBtnText.has(btn)) originalBtnText.set(btn, btn.innerHTML);
+    btn.disabled = true;
+    btn.style.opacity = '0.7';
+    btn.innerHTML = '';
+    btn.appendChild(el('div', { class: 'spinner', style: 'width:16px;height:16px;border-width:2px;margin-right:6px;' }));
+    btn.appendChild(document.createTextNode(customText || 'Loading...'));
+  } else {
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    btn.innerHTML = originalBtnText.get(btn) || 'Save';
+  }
+}
+
 export function modal(opts) {
   const root = document.getElementById('modal-root');
   if (!root) return { close() {} };
@@ -123,7 +163,6 @@ export function confirmDialog(opts) {
   });
 }
 
-// ---- Password input with eye toggle ----
 function svgEye(open) {
   const ns = 'http://www.w3.org/2000/svg';
   const svg = document.createElementNS(ns, 'svg');

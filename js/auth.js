@@ -4,7 +4,7 @@ import { state, setUser, setProfile, setBusinesses, setCurrentBusiness } from '.
 
 export async function loadSession() {
   const { data, error } = await supabase.auth.getSession();
-  if (error) { console.error('getSession', error); return null; }
+  if (error) return null;
   return data.session || null;
 }
 
@@ -16,27 +16,17 @@ export async function loadUserData() {
 
   setUser(user);
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('id, full_name, phone')
-    .eq('id', user.id)
-    .maybeSingle();
-  setProfile(profile || { id: user.id, full_name: '', phone: null });
+  // FETCH IN PARALLEL FOR SPEED
+  const [profileRes, membershipsRes] = await Promise.all([
+    supabase.from('profiles').select('id, full_name, phone').eq('id', user.id).maybeSingle(),
+    supabase.from('memberships')
+      .select(`id, role, business_id, businesses(id, name, currency, logo_url, business_type, phone, email, address, invoice_prefix, invoice_footer, plan_code, subscription_status, trial_ends_at, current_period_start, current_period_end)`)
+      .order('created_at', { ascending: true })
+  ]);
 
-  try { await supabase.rpc('claim_invitations'); }
-  catch (e) { console.warn('claim_invitations failed', e); }
+  setProfile(profileRes.data || { id: user.id, full_name: '', phone: null });
 
-  const { data: memberships, error: mErr } = await supabase
-    .from('memberships')
-    .select(`id, role, business_id,
-      businesses(id, name, currency, logo_url, business_type, phone, email,
-                 address, invoice_prefix, invoice_footer,
-                 plan_code, subscription_status, trial_ends_at,
-                 current_period_start, current_period_end, grace_until)`)
-    .order('created_at', { ascending: true });
-  if (mErr) throw mErr;
-
-  const list = (memberships || []).map((m) => ({
+  const list = (membershipsRes.data || []).map((m) => ({
     membershipId: m.id,
     businessId: m.business_id,
     role: m.role,
@@ -44,7 +34,7 @@ export async function loadUserData() {
   }));
 
   setBusinesses(list);
-  return { user, profile, memberships: list };
+  return { user, profile: profileRes.data, memberships: list };
 }
 
 export async function signIn(email, password) {
@@ -55,8 +45,7 @@ export async function signIn(email, password) {
 
 export async function signUp(email, password, fullName) {
   const { data, error } = await supabase.auth.signUp({
-    email, password,
-    options: { data: { full_name: fullName || '' } },
+    email, password, options: { data: { full_name: fullName || '' } },
   });
   if (error) throw error;
   return data;
