@@ -134,7 +134,6 @@ function guard(path) {
     const list = state.businesses || [];
     if (list.length === 0 && path !== 'onboarding') { navigate('onboarding'); return; }
     
-    // CHECK: Did they choose a plan?
     if (state.currentBusiness && list.length > 0) {
       const chosen = localStorage.getItem('slay-plan-chosen-' + state.currentBusiness.id);
       if (!chosen && path !== 'choose-plan' && path !== 'pricing' && path !== 'onboarding') {
@@ -150,6 +149,11 @@ function guard(path) {
   refreshAvatar();
   refreshBell();
   saveLastRoute();
+
+  // This guarantees the widget exists on every page load/navigation
+  if (state.user && !isResetFlow() && !PUBLIC_PAGES.includes(path)) {
+    buildSupportWidget();
+  }
 }
 
 async function showInvitePopup() {

@@ -1,7 +1,41 @@
-.support-fab { position: fixed; bottom: 24px; right: 24px; width: 56px; height: 56px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(37,99,235,.4); cursor: pointer; z-index: 9000; transition: transform 0.2s; }
+.support-fab { 
+  position: fixed; 
+  bottom: 24px; 
+  right: 24px; 
+  width: 56px; 
+  height: 56px; 
+  border-radius: 50%; 
+  background: var(--primary); 
+  color: white; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  box-shadow: 0 4px 12px rgba(37,99,235,.4); 
+  cursor: pointer; 
+  z-index: 99999; /* Puts it on top of EVERYTHING */
+  transition: transform 0.2s; 
+}
 .support-fab:hover { transform: scale(1.05); }
 .support-fab svg { width: 28px; height: 28px; }
-.support-chat { position: fixed; bottom: 90px; right: 24px; width: min(380px, calc(100vw - 48px)); height: 500px; background: var(--surface); border-radius: var(--radius-lg); box-shadow: 0 8px 32px rgba(0,0,0,0.15); display: flex; flex-direction: column; z-index: 9001; border: 1px solid var(--border); overflow: hidden; transform: translateY(10px); opacity: 0; pointer-events: none; transition: all 0.2s ease; }
+.support-chat { 
+  position: fixed; 
+  bottom: 90px; 
+  right: 24px; 
+  width: min(380px, calc(100vw - 48px)); 
+  height: 500px; 
+  background: var(--surface); 
+  border-radius: var(--radius-lg); 
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15); 
+  display: flex; 
+  flex-direction: column; 
+  z-index: 100000; /* Puts it on top of EVERYTHING */
+  border: 1px solid var(--border); 
+  overflow: hidden; 
+  transform: translateY(10px); 
+  opacity: 0; 
+  pointer-events: none; 
+  transition: all 0.2s ease; 
+}
 .support-chat.open { transform: translateY(0); opacity: 1; pointer-events: auto; }
 .chat-header { background: var(--primary); color: white; padding: 16px; display: flex; justify-content: space-between; align-items: center; }
 .chat-header h3 { margin: 0; font-size: 16px; color: white; }
