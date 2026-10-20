@@ -1,7 +1,6 @@
 import { el, toast } from '../ui.js';
 import { state } from '../state.js';
-import { supabase } from '../supabase.js';
-import { getOrCreateTicket, getMessages, sendMessage } from '../api/support.js';
+import { getOrCreateTicket, getMessages, sendMessage, markMessagesRead, getUnreadCount } from '../api/support.js';
 
 export function buildSupportWidget() {
   if (document.getElementById('support-fab')) return;
@@ -9,8 +8,11 @@ export function buildSupportWidget() {
   const fab = el('div', { id: 'support-fab', class: 'support-fab' });
   fab.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>';
   
+  // RED BADGE FOR UNREAD MESSAGES
+  const badge = el('div', { id: 'support-badge', style: 'position:absolute;top:0;right:0;background:red;color:white;border-radius:50%;padding:2px 6px;font-size:12px;font-weight:bold;display:none;' });
+  fab.appendChild(badge);
+
   const chat = el('div', { id: 'support-chat', class: 'support-chat' });
-  
   const header = el('div', { class: 'chat-header' });
   header.appendChild(el('h3', { text: 'Help & Support' }));
   const closeBtn = el('button', { class: 'chat-close', text: '×' });
@@ -36,64 +38,41 @@ export function buildSupportWidget() {
   document.body.appendChild(fab);
   document.body.appendChild(chat);
 
-  // Draggable logic
-  let isDragging = false;
-  let hasMoved = false;
-  let startX, startY, initialX, initialY;
-  const dragThreshold = 5;
-
-  const savedX = localStorage.getItem('slay-fab-x');
-  const savedY = localStorage.getItem('slay-fab-y');
+  // Draggable
+  let isDragging = false, hasMoved = false, startX, startY, initialX, initialY;
+  const savedX = localStorage.getItem('slay-fab-x'), savedY = localStorage.getItem('slay-fab-y');
   if (savedX !== null && savedY !== null) {
     fab.style.right = 'auto'; fab.style.bottom = 'auto';
     fab.style.left = savedX + 'px'; fab.style.top = savedY + 'px';
   }
-
-  function dragStart(e) {
-    if (e.type === 'mousedown') { startX = e.clientX; startY = e.clientY; }
-    else { startX = e.touches[0].clientX; startY = e.touches[0].clientY; }
-    initialX = fab.offsetLeft; initialY = fab.offsetTop;
-    isDragging = true; hasMoved = false;
-  }
-
-  function dragMove(e) {
-    if (!isDragging) return;
-    let currentX, currentY;
-    if (e.type === 'mousemove') { currentX = e.clientX; currentY = e.clientY; }
-    else { currentX = e.touches[0].clientX; currentY = e.touches[0].clientY; e.preventDefault(); }
-
-    const dx = currentX - startX; const dy = currentY - startY;
-    if (Math.abs(dx) > dragThreshold || Math.abs(dy) > dragThreshold) {
-      hasMoved = true;
-      fab.style.right = 'auto'; fab.style.bottom = 'auto';
-      let newX = Math.max(10, Math.min(initialX + dx, window.innerWidth - 66));
-      let newY = Math.max(10, Math.min(initialY + dy, window.innerHeight - 66));
-      fab.style.left = newX + 'px'; fab.style.top = newY + 'px';
+  fab.addEventListener('mousedown', (e) => { startX=e.clientX; startY=e.clientY; initialX=fab.offsetLeft; initialY=fab.offsetTop; isDragging=true; hasMoved=false; });
+  fab.addEventListener('touchstart', (e) => { startX=e.touches[0].clientX; startY=e.touches[0].clientY; initialX=fab.offsetLeft; initialY=fab.offsetTop; isDragging=true; hasMoved=false; }, {passive:true});
+  const onMove = (e) => {
+    if(!isDragging) return;
+    let cx = e.type==='mousemove'?e.clientX:e.touches[0].clientX;
+    let cy = e.type==='mousemove'?e.clientY:e.touches[0].clientY;
+    if(Math.abs(cx-startX)>5 || Math.abs(cy-startY)>5) {
+      hasMoved=true; fab.style.right='auto'; fab.style.bottom='auto';
+      fab.style.left = Math.max(10, Math.min(initialX+cx-startX, window.innerWidth-66))+'px';
+      fab.style.top = Math.max(10, Math.min(initialY+cy-startY, window.innerHeight-66))+'px';
     }
-  }
-
-  function dragEnd(e) {
-    if (!isDragging) return;
-    isDragging = false;
-    if (!hasMoved) chat.classList.toggle('open');
+  };
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('touchmove', onMove, {passive:false});
+  const onEnd = () => {
+    if(!isDragging) return; isDragging=false;
+    if(!hasMoved) chat.classList.toggle('open');
     else { localStorage.setItem('slay-fab-x', fab.offsetLeft); localStorage.setItem('slay-fab-y', fab.offsetTop); }
-  }
+  };
+  document.addEventListener('mouseup', onEnd);
+  document.addEventListener('touchend', onEnd);
 
-  fab.addEventListener('mousedown', dragStart);
-  document.addEventListener('mousemove', dragMove);
-  document.addEventListener('mouseup', dragEnd);
-  fab.addEventListener('touchstart', dragStart, { passive: true });
-  document.addEventListener('touchmove', dragMove, { passive: false });
-  document.addEventListener('touchend', dragEnd);
-
-  // FAQ
+  // Chat Logic
   const faqs = [
     { q: 'How do I add a product?', a: 'Go to Products -> Add Product.' },
     { q: 'How do I receive stock?', a: 'Go to Inventory -> Adjust -> Receive Stock.' },
-    { q: 'How do I make a sale?', a: 'Go to Sales -> New Sale.' },
-    { q: 'How do I invite a team member?', a: 'Go to Users & Roles -> Invite User.' }
+    { q: 'How do I make a sale?', a: 'Go to Sales -> New Sale.' }
   ];
-
   function renderFaq() {
     body.innerHTML = '';
     faqs.forEach(f => {
@@ -106,30 +85,16 @@ export function buildSupportWidget() {
   }
 
   let currentTicketId = null;
-  let realtimeChannel = null;
 
-  async function renderChat() {
-    body.innerHTML = '<div style="text-align:center;padding:20px;color:#666;">Connecting...</div>';
-    try {
-      if (!currentTicketId) {
-        currentTicketId = await getOrCreateTicket(state.currentBusiness.id, state.user.id, 'App Support');
-        
-        // --- REALTIME WEBSOCKETS ---
-        if (realtimeChannel) supabase.removeChannel(realtimeChannel);
-        realtimeChannel = supabase.channel('ticket-' + currentTicketId)
-          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_messages', filter: 'ticket_id=eq.' + currentTicketId }, payload => {
-            if (payload.new.sender_type !== 'user') {
-              loadMessages(); // reload messages instantly when admin replies
-            }
-          }).subscribe();
-      }
-      await loadMessages();
-    } catch (e) {
-      body.innerHTML = '<div style="color:red;padding:10px;">Error loading chat.</div>';
-    }
+  async function checkUnread() {
+    if (chat.classList.contains('open')) return; // Don't show badge if chat is open
+    const count = await getUnreadCount('user');
+    if (count > 0) { badge.style.display = 'block'; badge.textContent = count; }
+    else { badge.style.display = 'none'; }
   }
 
   async function loadMessages() {
+    if (!currentTicketId) return;
     const msgs = await getMessages(currentTicketId);
     body.innerHTML = '';
     if (!msgs.length) body.innerHTML = '<div style="text-align:center;padding:20px;color:#666;">No messages yet.</div>';
@@ -140,26 +105,31 @@ export function buildSupportWidget() {
       body.appendChild(bubble);
     });
     body.scrollTop = body.scrollHeight;
+    await markMessagesRead(currentTicketId, 'user'); // Mark as read when viewing
   }
+
+  tabChat.onclick = async () => {
+    tabChat.classList.add('active'); tabFaq.classList.remove('active');
+    inputArea.style.display = 'flex';
+    if (!currentTicketId) {
+      currentTicketId = await getOrCreateTicket(state.currentBusiness.id, state.user.id, 'App Support');
+    }
+    loadMessages();
+    // 2-second polling for WhatsApp feel
+    setInterval(loadMessages, 2000);
+  };
 
   sendBtn.onclick = async () => {
     const txt = input.value.trim();
     if (!txt || !currentTicketId) return;
     input.value = '';
-    try {
-      await sendMessage(currentTicketId, state.user.id, 'user', txt);
-      loadMessages();
-    } catch (e) { toast('Failed to send', 'error'); }
+    await sendMessage(currentTicketId, state.user.id, 'user', txt);
+    loadMessages();
   };
 
-  tabFaq.onclick = () => {
-    tabFaq.classList.add('active'); tabChat.classList.remove('active');
-    inputArea.style.display = 'none'; renderFaq();
-  };
-  tabChat.onclick = () => {
-    tabChat.classList.add('active'); tabFaq.classList.remove('active');
-    inputArea.style.display = 'flex'; renderChat();
-  };
-
+  tabFaq.onclick = () => { tabFaq.classList.add('active'); tabChat.classList.remove('active'); inputArea.style.display = 'none'; renderFaq(); };
+  
+  // Start polling for unread badge globally
+  setInterval(checkUnread, 3000);
   renderFaq();
 }

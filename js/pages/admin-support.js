@@ -1,31 +1,29 @@
 import { el, toast } from '../ui.js';
 import { navigate } from '../router.js';
-import { listAllTickets, getMessages, sendMessage } from '../api/support.js';
+import { listAllTickets, getMessages, sendMessage, markMessagesRead } from '../api/support.js';
 import { state } from '../state.js';
 
 export async function adminSupportPage(container) {
   const wrap = el('div', { class: 'container col' });
   container.appendChild(wrap);
+  wrap.appendChild(el('h1', { text: 'Support Inbox' }));
 
-  const header = el('div', { class: 'row-between' });
-  header.appendChild(el('h1', { text: 'Support Inbox' }));
-  wrap.appendChild(header);
-
-  const tickets = await listAllTickets();
   const list = el('div', { class: 'prod-list' });
-  
-  if (!tickets.length) {
-    list.appendChild(el('div', { class: 'state' }, [el('div', { class: 'state-title', text: 'No support tickets yet.' })]));
-  }
-
-  for (const t of tickets) {
-    const card = el('div', { class: 'card' });
-    card.appendChild(el('div', { class: 'prod-name', text: (t.businesses ? t.businesses.name : 'Business') + ' - ' + (t.profiles ? t.profiles.full_name : 'User') }));
-    card.appendChild(el('div', { class: 'prod-meta', text: 'Status: ' + t.status.toUpperCase() }));
-    card.onclick = () => openTicket(t, container);
-    list.appendChild(card);
-  }
   wrap.appendChild(list);
+
+  async function loadTickets() {
+    const tickets = await listAllTickets();
+    list.innerHTML = '';
+    if (!tickets.length) list.appendChild(el('div', { class: 'state' }, [el('div', { class: 'state-title', text: 'No support tickets.' })]));
+    for (const t of tickets) {
+      const card = el('div', { class: 'card', style: 'cursor:pointer;' });
+      card.appendChild(el('div', { class: 'prod-name', text: (t.businesses ? t.businesses.name : 'Business') }));
+      card.appendChild(el('div', { class: 'prod-meta', text: 'User: ' + (t.profiles ? t.profiles.full_name : 'User') }));
+      card.onclick = () => openTicket(t, container);
+      list.appendChild(card);
+    }
+  }
+  await loadTickets();
 }
 
 async function openTicket(t, container) {
@@ -40,7 +38,7 @@ async function openTicket(t, container) {
   header.appendChild(el('h1', { text: t.businesses ? t.businesses.name : 'Support' }));
   wrap.appendChild(header);
 
-  const chatBox = el('div', { style: 'background:var(--surface-2);border-radius:8px;padding:16px;height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;' });
+  const chatBox = el('div', { style: 'background:var(--surface-2);border-radius:8px;padding:16px;height:400px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;' });
   wrap.appendChild(chatBox);
 
   const inputRow = el('div', { class: 'row', style: 'margin-top:10px;' });
@@ -50,14 +48,15 @@ async function openTicket(t, container) {
   wrap.appendChild(inputRow);
 
   async function loadMsgs() {
-    chatBox.innerHTML = '';
     const msgs = await getMessages(t.id);
+    chatBox.innerHTML = '';
     msgs.forEach(m => {
       const b = el('div', { class: 'msg-bubble ' + (m.sender_type === 'admin' ? 'msg-user' : 'msg-admin') });
       b.appendChild(el('div', { text: m.message }));
       chatBox.appendChild(b);
     });
     chatBox.scrollTop = chatBox.scrollHeight;
+    await markMessagesRead(t.id, 'admin');
   }
 
   btn.onclick = async () => {
@@ -69,4 +68,5 @@ async function openTicket(t, container) {
   };
 
   loadMsgs();
+  setInterval(loadMsgs, 2000); // 2-second polling for admin
 }
