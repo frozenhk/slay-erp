@@ -25,10 +25,11 @@ export async function markMessagesRead(ticketId, senderType) {
   await supabase.from('support_messages').update({ is_read: true }).eq('ticket_id', ticketId).eq('sender_type', otherType).eq('is_read', false);
 }
 
-export async function getUnreadCount(senderType) {
-  // Get count of unread messages sent to me
+export async function getUnreadCount(senderType, ticketId = null) {
   const otherType = senderType === 'user' ? 'admin' : 'user';
-  const { count, error } = await supabase.from('support_messages').select('*', { count: 'exact', head: true }).eq('sender_type', otherType).eq('is_read', false);
+  let query = supabase.from('support_messages').select('*', { count: 'exact', head: true }).eq('sender_type', otherType).eq('is_read', false);
+  if (ticketId) query = query.eq('ticket_id', ticketId);
+  const { count, error } = await query;
   return count || 0;
 }
 

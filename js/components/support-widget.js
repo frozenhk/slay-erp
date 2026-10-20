@@ -8,7 +8,6 @@ export function buildSupportWidget() {
   const fab = el('div', { id: 'support-fab', class: 'support-fab' });
   fab.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>';
   
-  // RED BADGE FOR UNREAD MESSAGES
   const badge = el('div', { id: 'support-badge', style: 'position:absolute;top:0;right:0;background:red;color:white;border-radius:50%;padding:2px 6px;font-size:12px;font-weight:bold;display:none;' });
   fab.appendChild(badge);
 
@@ -38,13 +37,10 @@ export function buildSupportWidget() {
   document.body.appendChild(fab);
   document.body.appendChild(chat);
 
-  // Draggable
+  // Draggable logic (same as before)
   let isDragging = false, hasMoved = false, startX, startY, initialX, initialY;
   const savedX = localStorage.getItem('slay-fab-x'), savedY = localStorage.getItem('slay-fab-y');
-  if (savedX !== null && savedY !== null) {
-    fab.style.right = 'auto'; fab.style.bottom = 'auto';
-    fab.style.left = savedX + 'px'; fab.style.top = savedY + 'px';
-  }
+  if (savedX !== null && savedY !== null) { fab.style.right = 'auto'; fab.style.bottom = 'auto'; fab.style.left = savedX + 'px'; fab.style.top = savedY + 'px'; }
   fab.addEventListener('mousedown', (e) => { startX=e.clientX; startY=e.clientY; initialX=fab.offsetLeft; initialY=fab.offsetTop; isDragging=true; hasMoved=false; });
   fab.addEventListener('touchstart', (e) => { startX=e.touches[0].clientX; startY=e.touches[0].clientY; initialX=fab.offsetLeft; initialY=fab.offsetTop; isDragging=true; hasMoved=false; }, {passive:true});
   const onMove = (e) => {
@@ -67,11 +63,9 @@ export function buildSupportWidget() {
   document.addEventListener('mouseup', onEnd);
   document.addEventListener('touchend', onEnd);
 
-  // Chat Logic
   const faqs = [
     { q: 'How do I add a product?', a: 'Go to Products -> Add Product.' },
-    { q: 'How do I receive stock?', a: 'Go to Inventory -> Adjust -> Receive Stock.' },
-    { q: 'How do I make a sale?', a: 'Go to Sales -> New Sale.' }
+    { q: 'How do I receive stock?', a: 'Go to Inventory -> Adjust -> Receive Stock.' }
   ];
   function renderFaq() {
     body.innerHTML = '';
@@ -87,7 +81,11 @@ export function buildSupportWidget() {
   let currentTicketId = null;
 
   async function checkUnread() {
-    if (chat.classList.contains('open')) return; // Don't show badge if chat is open
+    // If chat is open and on the Live Chat tab, we are reading it
+    if (chat.classList.contains('open') && tabChat.classList.contains('active')) {
+      badge.style.display = 'none';
+      return;
+    }
     const count = await getUnreadCount('user');
     if (count > 0) { badge.style.display = 'block'; badge.textContent = count; }
     else { badge.style.display = 'none'; }
@@ -97,7 +95,6 @@ export function buildSupportWidget() {
     if (!currentTicketId) return;
     const msgs = await getMessages(currentTicketId);
     body.innerHTML = '';
-    if (!msgs.length) body.innerHTML = '<div style="text-align:center;padding:20px;color:#666;">No messages yet.</div>';
     msgs.forEach(m => {
       const bubble = el('div', { class: 'msg-bubble ' + (m.sender_type === 'user' ? 'msg-user' : 'msg-admin') });
       bubble.appendChild(el('div', { text: m.message }));
@@ -105,17 +102,17 @@ export function buildSupportWidget() {
       body.appendChild(bubble);
     });
     body.scrollTop = body.scrollHeight;
-    await markMessagesRead(currentTicketId, 'user'); // Mark as read when viewing
+    
+    // Mark as read and update badge immediately
+    await markMessagesRead(currentTicketId, 'user');
+    await checkUnread();
   }
 
   tabChat.onclick = async () => {
     tabChat.classList.add('active'); tabFaq.classList.remove('active');
     inputArea.style.display = 'flex';
-    if (!currentTicketId) {
-      currentTicketId = await getOrCreateTicket(state.currentBusiness.id, state.user.id, 'App Support');
-    }
+    if (!currentTicketId) currentTicketId = await getOrCreateTicket(state.currentBusiness.id, state.user.id, 'App Support');
     loadMessages();
-    // 2-second polling for WhatsApp feel
     setInterval(loadMessages, 2000);
   };
 
@@ -129,7 +126,7 @@ export function buildSupportWidget() {
 
   tabFaq.onclick = () => { tabFaq.classList.add('active'); tabChat.classList.remove('active'); inputArea.style.display = 'none'; renderFaq(); };
   
-  // Start polling for unread badge globally
-  setInterval(checkUnread, 3000);
+  setInterval(checkUnread, 2000); // Poll badge every 2 seconds
+  checkUnread();
   renderFaq();
 }

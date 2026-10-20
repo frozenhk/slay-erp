@@ -1,6 +1,6 @@
 import { el, toast } from '../ui.js';
 import { navigate } from '../router.js';
-import { listAllTickets, getMessages, sendMessage, markMessagesRead } from '../api/support.js';
+import { listAllTickets, getMessages, sendMessage, markMessagesRead, getUnreadCount } from '../api/support.js';
 import { state } from '../state.js';
 
 export async function adminSupportPage(container) {
@@ -15,15 +15,33 @@ export async function adminSupportPage(container) {
     const tickets = await listAllTickets();
     list.innerHTML = '';
     if (!tickets.length) list.appendChild(el('div', { class: 'state' }, [el('div', { class: 'state-title', text: 'No support tickets.' })]));
+    
     for (const t of tickets) {
-      const card = el('div', { class: 'card', style: 'cursor:pointer;' });
-      card.appendChild(el('div', { class: 'prod-name', text: (t.businesses ? t.businesses.name : 'Business') }));
-      card.appendChild(el('div', { class: 'prod-meta', text: 'User: ' + (t.profiles ? t.profiles.full_name : 'User') }));
+      const unreadCount = await getUnreadCount('admin', t.id);
+      
+      const card = el('div', { class: 'card', style: 'cursor:pointer; display:flex; justify-content:space-between; align-items:center;' });
+      
+      const left = el('div');
+      left.appendChild(el('div', { class: 'prod-name', text: (t.businesses ? t.businesses.name : 'Business') }));
+      left.appendChild(el('div', { class: 'prod-meta', text: 'User: ' + (t.profiles ? t.profiles.full_name : 'User') }));
+      card.appendChild(left);
+
+      if (unreadCount > 0) {
+        const badge = el('div', { style: 'background:red;color:white;border-radius:50%;padding:4px 8px;font-size:12px;font-weight:bold;', text: String(unreadCount) });
+        card.appendChild(badge);
+      }
+
       card.onclick = () => openTicket(t, container);
       list.appendChild(card);
     }
   }
   await loadTickets();
+  
+  // Auto-refresh the admin inbox list every 2 seconds
+  const interval = setInterval(async () => {
+    if (!document.body.contains(wrap)) { clearInterval(interval); return; }
+    await loadTickets();
+  }, 2000);
 }
 
 async function openTicket(t, container) {
@@ -56,7 +74,7 @@ async function openTicket(t, container) {
       chatBox.appendChild(b);
     });
     chatBox.scrollTop = chatBox.scrollHeight;
-    await markMessagesRead(t.id, 'admin');
+    await markMessagesRead(t.id, 'admin'); // Clear admin unread badge
   }
 
   btn.onclick = async () => {
@@ -68,5 +86,5 @@ async function openTicket(t, container) {
   };
 
   loadMsgs();
-  setInterval(loadMsgs, 2000); // 2-second polling for admin
+  setInterval(loadMsgs, 2000);
 }
