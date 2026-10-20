@@ -193,3 +193,17 @@
   font-family: inherit;
 }
 .pw-toggle:hover { background: var(--surface-2); color: var(--text); }
+
+/* Inline Form Error */
+.form-error-box {
+  background: #FEF2F2;
+  border: 1px solid #FCA5A5;
+  color: #991B1B;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  line-height: 1.4;
+  margin-bottom: 16px;
+  display: none;
+  text-align: left;
+}

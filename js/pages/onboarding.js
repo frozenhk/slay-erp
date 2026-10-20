@@ -1,4 +1,4 @@
-import { el, toast } from '../ui.js';
+import { el, toast, setButtonLoading } from '../ui.js';
 import { navigate } from '../router.js';
 import { t } from '../i18n.js';
 import { supabase } from '../supabase.js';
@@ -6,8 +6,7 @@ import { createBusiness, uploadLogo } from '../api/businesses.js';
 import { loadUserData } from '../auth.js';
 import { state, setCurrentBusiness } from '../state.js';
 
-const TYPES = ['Clothing', 'Supermarket', 'Electronics', 'Beauty',
-  'Restaurant', 'Wholesale / Distribution', 'Other'];
+const TYPES = ['Clothing', 'Supermarket', 'Electronics', 'Beauty', 'Restaurant', 'Wholesale / Distribution', 'Other'];
 const CURRENCIES = ['XAF', 'XOF', 'USD', 'EUR', 'GBP'];
 
 export function onboarding(container) {
@@ -24,43 +23,24 @@ export function onboarding(container) {
 
   const form = el('form', { class: 'auth-form' });
 
-  const nameInput = el('input', {
-    class: 'input', type: 'text', required: 'true',
-    placeholder: 'e.g. Ada Fashion House',
-  });
-  form.appendChild(el('div', { class: 'field' }, [
-    el('label', { class: 'label', text: t.biz_name_label }), nameInput,
-  ]));
+  const nameInput = el('input', { class: 'input', type: 'text', required: 'true', placeholder: 'e.g. Ada Fashion House' });
+  form.appendChild(el('div', { class: 'field' }, [el('label', { class: 'label', text: t.biz_name_label }), nameInput]));
 
   const typeSel = el('select', { class: 'select' });
   for (const bt of TYPES) typeSel.appendChild(el('option', { value: bt, text: bt }));
-  form.appendChild(el('div', { class: 'field' }, [
-    el('label', { class: 'label', text: t.biz_type_label }), typeSel,
-  ]));
+  form.appendChild(el('div', { class: 'field' }, [el('label', { class: 'label', text: t.biz_type_label }), typeSel]));
 
-  const countryInput = el('input', {
-    class: 'input', type: 'text', value: 'Cameroon',
-  });
-  form.appendChild(el('div', { class: 'field' }, [
-    el('label', { class: 'label', text: t.biz_country_label }), countryInput,
-  ]));
+  const countryInput = el('input', { class: 'input', type: 'text', value: 'Cameroon' });
+  form.appendChild(el('div', { class: 'field' }, [el('label', { class: 'label', text: t.biz_country_label }), countryInput]));
 
   const currSel = el('select', { class: 'select' });
   for (const c of CURRENCIES) currSel.appendChild(el('option', { value: c, text: c }));
-  form.appendChild(el('div', { class: 'field' }, [
-    el('label', { class: 'label', text: t.biz_currency_label }), currSel,
-  ]));
+  form.appendChild(el('div', { class: 'field' }, [el('label', { class: 'label', text: t.biz_currency_label }), currSel]));
 
   const logoInput = el('input', { class: 'input', type: 'file', accept: 'image/*' });
-  form.appendChild(el('div', { class: 'field' }, [
-    el('label', { class: 'label', text: t.biz_logo_label }),
-    logoInput,
-    el('div', { class: 'hint', text: t.biz_logo_hint }),
-  ]));
+  form.appendChild(el('div', { class: 'field' }, [el('label', { class: 'label', text: t.biz_logo_label }), logoInput, el('div', { class: 'hint', text: t.biz_logo_hint })]));
 
-  const submitBtn = el('button', {
-    class: 'btn btn-primary btn-lg btn-block', type: 'submit', text: t.biz_create_btn,
-  });
+  const submitBtn = el('button', { class: 'btn btn-primary btn-lg btn-block', type: 'submit', text: t.biz_create_btn });
   form.appendChild(submitBtn);
   card.appendChild(form);
   wrap.appendChild(card);
@@ -74,38 +54,27 @@ export function onboarding(container) {
     if (!name) { toast(t.biz_name_required, 'error'); return; }
 
     busy = true;
-    submitBtn.disabled = true;
-    submitBtn.textContent = t.biz_creating_btn;
+    setButtonLoading(submitBtn, true, t.biz_creating_btn);
 
     try {
-      const businessId = await createBusiness({
-        name,
-        type: typeSel.value,
-        country: countryInput.value.trim(),
-        currency: currSel.value,
-      });
-
+      const businessId = await createBusiness({ name, type: typeSel.value, country: countryInput.value.trim(), currency: currSel.value });
       const file = logoInput.files && logoInput.files[0];
       if (file) {
         try {
           const url = await uploadLogo(businessId, file);
           await supabase.from('businesses').update({ logo_url: url }).eq('id', businessId);
-        } catch (upErr) {
-          toast(t.biz_logo_failed, 'warning');
-        }
+        } catch (upErr) { toast(t.biz_logo_failed, 'warning'); }
       }
-
       await loadUserData();
       const m = (state.businesses || []).find((x) => x.businessId === businessId);
       if (m) setCurrentBusiness(m.business, m.role);
 
       toast(t.biz_created_toast, 'success');
-      navigate('dashboard');
+      navigate('choose-plan'); // <--- NEW FLOW: Go to Choose Plan
     } catch (err) {
       toast(err.message || t.biz_create_failed, 'error');
       busy = false;
-      submitBtn.disabled = false;
-      submitBtn.textContent = t.biz_create_btn;
+      setButtonLoading(submitBtn, false);
     }
   });
 }

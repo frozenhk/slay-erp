@@ -11,6 +11,7 @@ import { checkEmail } from './pages/check-email.js';
 import { resetPage } from './pages/reset.js';
 import { switcher } from './pages/switcher.js';
 import { onboarding } from './pages/onboarding.js';
+import { choosePlanPage } from './pages/choose-plan.js';
 import { dashboard } from './pages/dashboard.js';
 import { productsPage } from './pages/products.js';
 import { inventoryPage } from './pages/inventory.js';
@@ -46,7 +47,7 @@ import { listMyInvites, acceptInvite, declineInvite } from './api/invitations.js
 
 const PUBLIC_PAGES = ['login', 'signup', 'forgot', 'check-email', 'reset'];
 const AUTH_REDIRECT = ['login', 'signup', 'forgot'];
-const NO_GUARD = ['login', 'signup', 'forgot', 'check-email', 'reset', 'switcher', 'onboarding', '*'];
+const NO_GUARD = ['login', 'signup', 'forgot', 'check-email', 'reset', 'switcher', 'onboarding', 'choose-plan', '*'];
 const RESET_FLAG = 'slay-reset-pending';
 const LAST_ROUTE_KEY = 'slay-last-route';
 
@@ -83,6 +84,7 @@ function registerRoutes() {
   register('login', login); register('signup', signup); register('forgot', forgot);
   register('check-email', checkEmail); register('reset', resetPage);
   register('switcher', switcher); register('onboarding', onboarding);
+  register('choose-plan', choosePlanPage);
   register('dashboard', dashboard);
   register('products', productsPage);
   register('inventory', async (c, p) => {
@@ -127,9 +129,19 @@ function guard(path) {
   if (isResetFlow() && !['reset', 'login', 'check-email'].includes(path)) { navigate('reset'); return; }
   if (!state.user && !PUBLIC_PAGES.includes(path)) { navigate('login'); return; }
   if (state.user && AUTH_REDIRECT.includes(path) && !isResetFlow()) { routeAfterAuth(); return; }
+  
   if (state.user && !isResetFlow()) {
     const list = state.businesses || [];
     if (list.length === 0 && path !== 'onboarding') { navigate('onboarding'); return; }
+    
+    // CHECK: Did they choose a plan?
+    if (state.currentBusiness && list.length > 0) {
+      const chosen = localStorage.getItem('slay-plan-chosen-' + state.currentBusiness.id);
+      if (!chosen && path !== 'choose-plan' && path !== 'pricing' && path !== 'onboarding') {
+        navigate('choose-plan'); return;
+      }
+    }
+
     if (list.length > 0 && !NO_GUARD.includes(path) && path !== 'admin' && path !== 'recovery' && !canAccess(state.role, path)) {
       navigate('dashboard'); return;
     }
