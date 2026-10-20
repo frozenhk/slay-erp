@@ -8,34 +8,31 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./css/tokens.css?v=20">
-<link rel="stylesheet" href="./css/base.css?v=20">
-<link rel="stylesheet" href="./css/components.css?v=20">
-<link rel="stylesheet" href="./css/account.css?v=20">
-<link rel="stylesheet" href="./css/products.css?v=20">
-<link rel="stylesheet" href="./css/inventory.css?v=20">
-<link rel="stylesheet" href="./css/customers.css?v=20">
-<link rel="stylesheet" href="./css/sales.css?v=20">
-<link rel="stylesheet" href="./css/invoice.css?v=20">
-<link rel="stylesheet" href="./css/dashboard.css?v=20">
-<link rel="stylesheet" href="./css/expenses.css?v=20">
-<link rel="stylesheet" href="./css/reports.css?v=20">
-<link rel="stylesheet" href="./css/users.css?v=23">
-<link rel="stylesheet" href="./css/support.css?v=23">
+<link rel="stylesheet" href="./css/tokens.css?v=24">
+<link rel="stylesheet" href="./css/base.css?v=24">
+<link rel="stylesheet" href="./css/components.css?v=24">
+<link rel="stylesheet" href="./css/account.css?v=24">
+<link rel="stylesheet" href="./css/products.css?v=24">
+<link rel="stylesheet" href="./css/inventory.css?v=24">
+<link rel="stylesheet" href="./css/customers.css?v=24">
+<link rel="stylesheet" href="./css/sales.css?v=24">
+<link rel="stylesheet" href="./css/invoice.css?v=24">
+<link rel="stylesheet" href="./css/dashboard.css?v=24">
+<link rel="stylesheet" href="./css/expenses.css?v=24">
+<link rel="stylesheet" href="./css/reports.css?v=24">
+<link rel="stylesheet" href="./css/users.css?v=24">
+<link rel="stylesheet" href="./css/support.css?v=24">
 <link rel="manifest" href="./manifest.json">
 <link rel="icon" href="./assets/logo.svg" type="image/svg+xml">
 <style>
-  /* Global Loading Bar */
-  #global-loader {
-    position: fixed; top: 0; left: 0; height: 3px; background: var(--primary);
-    width: 0%; z-index: 99999; transition: width 0.2s ease, opacity 0.3s ease;
-    box-shadow: 0 0 10px var(--primary); opacity: 0; pointer-events: none;
-  }
+  #global-loader { position: fixed; top: 0; left: 0; height: 3px; background: var(--primary); width: 0%; z-index: 99999; transition: width 0.2s ease, opacity 0.3s ease; box-shadow: 0 0 10px var(--primary); opacity: 0; pointer-events: none; }
   #global-loader.active { opacity: 1; }
+  #fatal-error { display: none; position: fixed; top: 0; left: 0; right: 0; background: #DC2626; color: white; padding: 20px; z-index: 999999; font-family: monospace; font-size: 14px; line-height: 1.5; white-space: pre-wrap; }
 </style>
 </head>
 <body>
 <div id="global-loader"></div>
+<div id="fatal-error"></div>
 <div id="offline-banner" style="display:none;position:fixed;top:0;left:0;right:0;background:#EA580C;color:#fff;padding:6px 12px;font-size:13px;text-align:center;z-index:9998;font-family:system-ui,sans-serif;">You are offline.</div>
 <div id="global-error" style="display:none;position:fixed;top:0;left:0;right:0;background:#DC2626;color:#fff;padding:10px 12px;z-index:99999;font-family:monospace;font-size:12px;line-height:1.4;max-height:40vh;overflow:auto;white-space:pre-wrap;word-break:break-all;transition:opacity .3s;"></div>
 <div id="app" class="app-shell">
@@ -48,19 +45,21 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <script>
 (function(){
+  var fatal = document.getElementById('fatal-error');
+  window.addEventListener('error', function(e){
+    fatal.style.display = 'block';
+    fatal.textContent = 'CRITICAL ERROR: ' + (e.message || 'Unknown') + '\nFile: ' + (e.filename || 'Unknown') + '\nLine: ' + (e.lineno || 'Unknown');
+  });
+  window.addEventListener('unhandledrejection', function(e){
+    fatal.style.display = 'block';
+    fatal.textContent = 'PROMISE ERROR: ' + (e.reason && e.reason.message ? e.reason.message : String(e.reason));
+  });
+
   var box = document.getElementById('global-error');
   var hideTimer = null;
-  function show(msg){
-    box.textContent = msg; box.style.display = 'block'; box.style.opacity = '1';
-    if (hideTimer) clearTimeout(hideTimer); hideTimer = setTimeout(hide, 6000);
-  }
-  function hide(){
-    box.style.opacity = '0';
-    setTimeout(function(){ if (box.style.opacity === '0') { box.style.display = 'none'; box.textContent = ''; } }, 300);
-  }
-  window.addEventListener('error', function(e){ show('ERROR: ' + (e.message||'unknown')); });
-  window.addEventListener('unhandledrejection', function(e){ show('ERROR: ' + (e.reason && e.reason.message ? e.reason.message : String(e.reason))); });
-
+  function show(msg){ box.textContent = msg; box.style.display = 'block'; box.style.opacity = '1'; if (hideTimer) clearTimeout(hideTimer); hideTimer = setTimeout(hide, 6000); }
+  function hide(){ box.style.opacity = '0'; setTimeout(function(){ if (box.style.opacity === '0') { box.style.display = 'none'; box.textContent = ''; } }, 300); }
+  
   var banner = document.getElementById('offline-banner');
   function updateOnline(){ banner.style.display = navigator.onLine ? 'none' : 'block'; }
   window.addEventListener('online', updateOnline); window.addEventListener('offline', updateOnline); updateOnline();
@@ -81,6 +80,6 @@
   }
 })();
 </script>
-<script type="module" src="./js/app.js?v=20"></script>
+<script type="module" src="./js/app.js?v=24"></script>
 </body>
 </html>

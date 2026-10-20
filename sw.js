@@ -1,4 +1,4 @@
-const CACHE = 'slay-erp-v23';
+const CACHE = 'slay-erp-v24';
 const SHELL = [
   './', './index.html', './manifest.json', './assets/logo.svg',
   './css/tokens.css', './css/base.css', './css/components.css', './css/account.css',
