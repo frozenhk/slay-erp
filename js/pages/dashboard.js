@@ -55,7 +55,6 @@ export async function dashboard(container) {
   quick.appendChild(newProd);
   wrap.appendChild(quick);
 
-  // --- MONEY OWED TO YOU ---
   if (outstanding && outstanding.length) {
     let overdueCount = 0, dueSoonCount = 0, totalOutstanding = 0;
     for (const s of outstanding) {
@@ -74,7 +73,6 @@ export async function dashboard(container) {
     debtCard.appendChild(dh);
 
     const statGrid = el('div', { class: 'dash-grid', style: 'margin-bottom:10px;' });
-    // FIXED: Added labels to the metric calls
     statGrid.appendChild(metric(t.debt_overdue_count, String(overdueCount), overdueCount > 0 ? 'error' : 'success'));
     statGrid.appendChild(metric(t.debt_due_soon_count, String(dueSoonCount), dueSoonCount > 0 ? 'warn' : 'success'));
     statGrid.appendChild(metric(t.debt_total_outstanding, money(totalOutstanding), totalOutstanding > 0 ? 'warn' : 'success'));
@@ -112,10 +110,9 @@ export async function dashboard(container) {
   grid.appendChild(metric(t.dash_out_stock, String(data.outStockCount), data.outStockCount > 0 ? 'error' : 'success'));
   wrap.appendChild(grid);
 
-  // --- CHARTS SECTION ---
   const chartsGrid = el('div', { style: 'display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px; margin-top:16px;' });
 
-  // 1. Revenue Line Chart
+  // --- TRADING STYLE CHART ---
   const chartCard = el('div', { class: 'dash-card' });
   chartCard.appendChild(el('div', { class: 'dash-card-title', text: t.dash_revenue_7d }));
   const canvasWrap = el('div', { class: 'chart-canvas-wrap' });
@@ -125,7 +122,6 @@ export async function dashboard(container) {
   chartCard.appendChild(canvasWrap);
   chartsGrid.appendChild(chartCard);
 
-  // 2. Top Products Bar Chart
   const topCard = el('div', { class: 'dash-card' });
   topCard.appendChild(el('div', { class: 'dash-card-title', text: t.dash_top_products }));
   const topCanvasWrap = el('div', { class: 'chart-canvas-wrap' });
@@ -142,7 +138,6 @@ export async function dashboard(container) {
     drawTopProductsChart(data.topProducts);
   }, 0);
 
-  // --- RECENT SALES ---
   const recentCard = el('div', { class: 'dash-card', style: 'margin-top:16px;' });
   const recentHead = el('div', { class: 'dash-card-head' });
   recentHead.appendChild(el('div', { class: 'dash-card-title', text: t.dash_recent_sales }));
@@ -190,9 +185,18 @@ function drawChart(days) {
   }
   const canvas = document.getElementById('dash-chart');
   if (!canvas || !window.Chart) return;
+  
+  const ctx = canvas.getContext('2d');
+  
+  // Create a gradient for the "Trading" look
+  const gradient = ctx.createLinearGradient(0, 0, 0, 250);
+  gradient.addColorStop(0, 'rgba(37,99,235,0.4)');
+  gradient.addColorStop(1, 'rgba(37,99,235,0)');
+
   const labels = days.map((d) => d.label);
   const values = days.map((d) => d.revenue);
-  chartInstance = new window.Chart(canvas.getContext('2d'), {
+  
+  chartInstance = new window.Chart(ctx, {
     type: 'line',
     data: {
       labels,
@@ -200,17 +204,41 @@ function drawChart(days) {
         label: t.sale_total,
         data: values,
         borderColor: '#2563EB',
-        backgroundColor: 'rgba(37,99,235,.12)',
-        borderWidth: 2, fill: true, tension: 0.35,
-        pointRadius: 3, pointBackgroundColor: '#2563EB',
+        borderWidth: 2,
+        backgroundColor: gradient,
+        fill: true,
+        tension: 0.45, // Smooth curve
+        pointRadius: 0, // No dots, like trading apps
+        pointHoverRadius: 6,
+        pointHoverBackgroundColor: '#2563EB',
+        pointHoverBorderColor: '#fff',
+        pointHoverBorderWidth: 2,
       }],
     },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => money(ctx.parsed.y) } } },
+      interaction: { mode: 'index', intersect: false },
+      plugins: { 
+        legend: { display: false }, 
+        tooltip: { 
+          backgroundColor: '#111827',
+          titleFont: { size: 13 },
+          bodyFont: { size: 14, weight: 'bold' },
+          padding: 10,
+          displayColors: false,
+          callbacks: { label: (ctx) => money(ctx.parsed.y) } 
+        } 
+      },
       scales: {
-        y: { beginAtZero: true, ticks: { callback: (v) => money(v), font: { size: 11 } }, grid: { color: '#E5E7EB' } },
-        x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+        y: { 
+          beginAtZero: true, 
+          ticks: { display: false }, // Hide Y axis numbers for cleaner look
+          grid: { color: 'rgba(229, 231, 235, 0.4)', drawBorder: false } 
+        },
+        x: { 
+          grid: { display: false }, 
+          ticks: { font: { size: 11 }, color: '#64748B' } 
+        },
       },
     },
   });
@@ -239,11 +267,11 @@ function drawTopProductsChart(topProducts) {
       }],
     },
     options: {
-      indexAxis: 'y', // Makes it a horizontal bar chart
+      indexAxis: 'y',
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false } },
       scales: {
-        x: { beginAtZero: true, ticks: { callback: (v) => money(v), font: { size: 10 } } },
+        x: { beginAtZero: true, ticks: { display: false }, grid: { display: false } },
         y: { grid: { display: false }, ticks: { font: { size: 11 } } },
       },
     },

@@ -3,10 +3,10 @@ import { showLoader, hideLoader } from './ui.js';
 const routes = new Map();
 let onNavigate = null;
 
-export function register(path, handler) {
-  routes.set(path, handler);
-}
+// Pages where we must NEVER auto-refresh to avoid losing user input
+const FORM_PAGES = ['sales/new', 'sales/view', 'products/edit', 'products/new', 'customers/new', 'customers/edit', 'login', 'signup', 'onboarding', 'choose-plan', 'settings', 'users'];
 
+export function register(path, handler) { routes.set(path, handler); }
 export function onRouteChange(fn) { onNavigate = fn; }
 
 export function parseHash() {
@@ -22,7 +22,7 @@ export function navigate(path) {
   const clean = String(path || '').replace(/^#?\/*/, '');
   const target = '#/' + clean;
   if (location.hash === target) {
-    renderCurrent(false); // Force manual refresh
+    renderCurrent(false);
   } else {
     location.hash = target;
   }
@@ -44,10 +44,16 @@ async function renderCurrent(isBackground) {
   const container = document.getElementById('page');
   if (!container || typeof handler !== 'function') return;
 
-  // If we are doing a background refresh, make sure the route hasn't changed
-  if (isBackground && (path !== lastPath || JSON.stringify(params) !== lastParamsStr)) {
-    return; 
-  }
+  // 1. If we are doing a background refresh, make sure the route hasn't changed
+  if (isBackground && (path !== lastPath || JSON.stringify(params) !== lastParamsStr)) return;
+
+  // 2. If we are on a form page, STOP the background refresh completely
+  const fullPath = path + (params.length ? '/' + params.join('/') : '');
+  if (isBackground && FORM_PAGES.some(p => fullPath.startsWith(p))) return;
+
+  // 3. If the user is typing, STOP the refresh
+  const active = document.activeElement;
+  if (isBackground && active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) return;
 
   if (!isBackground) {
     lastPath = path;
@@ -55,27 +61,25 @@ async function renderCurrent(isBackground) {
   }
 
   if (isBackground) {
-    // --- SMART DIFFING ---
     const tempContainer = document.createElement('div');
     try {
-      // Render the page silently in the background
       await handler(tempContainer, params);
       const newHtml = tempContainer.innerHTML;
       
       // Only touch the DOM if something actually changed
       if (newHtml !== lastHtml) {
-        const scrollY = window.scrollY; // Save scroll position
+        const scrollY = window.scrollY;
         container.innerHTML = newHtml;
         lastHtml = newHtml;
-        window.scrollTo(0, scrollY); // Restore scroll position
+        window.scrollTo(0, scrollY);
       }
     } catch (e) {
-      console.warn('Silent background refresh skipped', e);
+      console.warn('Silent refresh skipped', e);
     }
     return;
   }
 
-  // --- NORMAL NAVIGATION ---
+  // Normal navigation
   showLoader();
   await new Promise((r) => setTimeout(r, 10));
   while (container.firstChild) container.removeChild(container.firstChild);
