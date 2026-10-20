@@ -86,10 +86,13 @@ export function signup(container) {
 
     try {
       const res = await signUp(email, password, name);
+      
+      // If email confirmation is OFF, Supabase returns a session immediately.
       if (res && res.session) {
         await loadUserData();
         await routeAfterAuth();
       } else {
+        // If it requires email confirmation
         navigate('check-email');
       }
     } catch (err) {
