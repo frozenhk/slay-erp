@@ -136,7 +136,6 @@ function guard(path) {
     const list = state.businesses || [];
     if (list.length === 0 && path !== 'onboarding') { navigate('onboarding'); return; }
     
-    // CRITICAL FIX: If no business is selected, but they have businesses, send to switcher
     if (!state.currentBusiness && list.length > 0 && path !== 'switcher' && path !== 'onboarding') {
       navigate('switcher'); return;
     }
@@ -177,6 +176,29 @@ async function showInvitePopup() {
       { label: 'Accept', class: 'btn-primary', onClick: async (c) => { await acceptInvite(inv.id); c(); toast('Joined!', 'success'); await loadUserData(); location.reload(); } }
     ]
   });
+}
+
+// --- THE GLOBAL 2 SECOND AUTO-REFRESH ---
+function startAutoRefresh() {
+  setInterval(() => {
+    // 1. Don't refresh if the user is typing in an input or textarea
+    const active = document.activeElement;
+    if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) {
+      return;
+    }
+    
+    // 2. Don't refresh if a modal is open
+    if (document.querySelector('.modal-backdrop')) {
+      return;
+    }
+
+    // 3. Don't refresh if there's no user logged in
+    if (!state.user) return;
+
+    // 4. Trigger the silent soft-refresh
+    window.dispatchEvent(new Event('soft-refresh'));
+
+  }, 2000); // Every 2 seconds
 }
 
 async function boot() {
@@ -222,9 +244,10 @@ async function boot() {
   }
 
   startRouter();
+  startAutoRefresh(); // Start the 2-second sync
 
   if (state.user) {
-    showInvitePopup(); setInterval(showInvitePopup, 2000);
+    showInvitePopup(); setInterval(showInvitePopup, 5000);
     buildSupportWidget();
   }
 
