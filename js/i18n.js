@@ -1,33 +1,69 @@
 import { en } from './i18n/en.js';
 import { fr } from './i18n/fr.js';
 
-// v48 additions — Fixed missing due date buttons
 Object.assign(en, {
-  debt_due_date: 'Payment due date',
-  debt_due_date_hint: 'When should the remaining balance be paid?',
-  debt_quick_3: '3 days', debt_quick_7: '7 days',
-  debt_quick_14: '14 days', debt_quick_30: '30 days',
-  debt_quick_custom: 'Custom date',
-  debt_due_today: 'Due today', debt_day_left: 'day left', debt_days_left: 'days left',
-  debt_day_overdue: 'day overdue', debt_days_overdue: 'days overdue',
-  debt_overdue_count: 'Overdue', debt_due_soon_count: 'Due within 7 days',
-  debt_total_outstanding: 'Total outstanding', debt_nothing: 'No outstanding balances.',
-  debt_view_payments: 'View all', debt_dashboard_title: 'Money owed to you',
-  debt_no_due: 'No due date', debt_remind_wa: 'Remind on WhatsApp',
+  // Admin translations
+  admin_businesses_title: 'All businesses',
+  admin_no_businesses: 'No businesses yet.',
+  admin_change_plan: 'Change plan',
+  admin_extend_trial: 'Extend trial',
+  admin_plan: 'Plan',
+  admin_reason: 'Reason',
+  admin_reason_ph: 'Optional note for the audit log',
+  admin_days: 'Days',
+  admin_days_required: 'Enter a number of days',
+  admin_plan_changed: 'Plan updated',
+  admin_trial_extended: 'Trial extended',
+  admin_tile: 'Platform admin',
+  admin_tile_desc: 'Manage businesses and subscriptions',
+
+  // Trial translations
+  sub_trial_ends: 'Trial ends',
+  sub_ends_on: 'Ends on',
+  sub_status_trialing: 'Free trial',
+  sub_status_active: 'Active',
+  sub_status_past_due: 'Past due',
+  sub_status_grace_period: 'Grace period',
+  sub_status_expired: 'Expired',
+  sub_status_cancelled: 'Cancelled',
+  sub_status_suspended: 'Suspended',
+
+  // Dashboard translations
+  dash_full_analytics: 'Full Analytics',
+  dash_revenue: 'Revenue',
+  dash_orders: 'Orders',
+  dash_profit: 'Profit',
 });
 
 Object.assign(fr, {
-  debt_due_date: 'Date d\'échéance',
-  debt_due_date_hint: 'Quand le solde doit-il être payé ?',
-  debt_quick_3: '3 jours', debt_quick_7: '7 jours',
-  debt_quick_14: '14 jours', debt_quick_30: '30 jours',
-  debt_quick_custom: 'Autre date',
-  debt_due_today: "Échéance aujourd'hui", debt_day_left: 'jour restant', debt_days_left: 'jours restants',
-  debt_day_overdue: 'jour de retard', debt_days_overdue: 'jours de retard',
-  debt_overdue_count: 'En retard', debt_due_soon_count: 'Dû sous 7 jours',
-  debt_total_outstanding: 'Total impayé', debt_nothing: 'Aucun solde impayé.',
-  debt_view_payments: 'Voir tout', debt_dashboard_title: 'Argent qu\'on vous doit',
-  debt_no_due: 'Pas d\'échéance', debt_remind_wa: 'Rappeler sur WhatsApp',
+  admin_businesses_title: 'Toutes les entreprises',
+  admin_no_businesses: 'Aucune entreprise.',
+  admin_change_plan: 'Changer de forfait',
+  admin_extend_trial: "Prolonger l'essai",
+  admin_plan: 'Forfait',
+  admin_reason: 'Raison',
+  admin_reason_ph: "Note optionnelle pour le journal d'audit",
+  admin_days: 'Jours',
+  admin_days_required: 'Entrez un nombre de jours',
+  admin_plan_changed: 'Forfait mis à jour',
+  admin_trial_extended: 'Essai prolongé',
+  admin_tile: 'Admin plateforme',
+  admin_tile_desc: 'Gérer les entreprises et abonnements',
+
+  sub_trial_ends: "Fin de l'essai",
+  sub_ends_on: 'Se termine le',
+  sub_status_trialing: 'Essai gratuit',
+  sub_status_active: 'Actif',
+  sub_status_past_due: 'En retard',
+  sub_status_grace_period: 'Période de grâce',
+  sub_status_expired: 'Expiré',
+  sub_status_cancelled: 'Annulé',
+  sub_status_suspended: 'Suspendu',
+
+  dash_full_analytics: 'Analyses complètes',
+  dash_revenue: "Chiffre d'affaires",
+  dash_orders: 'Commandes',
+  dash_profit: 'Bénéfice',
 });
 
 const STORAGE_KEY = 'slay-erp-lang';

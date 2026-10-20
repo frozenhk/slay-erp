@@ -207,3 +207,33 @@
   display: none;
   text-align: left;
 }
+
+/* --- PREMIUM ANIMATIONS --- */
+.fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+}
+
+.btn-press:active {
+  transform: scale(0.96) !important;
+}
+
+/* Smooth page transitions */
+#page {
+  animation: pageEnter 0.25s ease-out forwards;
+}
+@keyframes pageEnter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

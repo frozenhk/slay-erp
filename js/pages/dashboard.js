@@ -12,7 +12,7 @@ let topChartInstance = null;
 
 export async function dashboard(container) {
   const businessId = state.currentBusiness && state.currentBusiness.id;
-  const wrap = el('div', { class: 'container col' });
+  const wrap = el('div', { class: 'container col fade-in' });
   container.appendChild(wrap);
 
   if (!businessId) return;
@@ -47,59 +47,13 @@ export async function dashboard(container) {
   wrap.appendChild(hero);
 
   const quick = el('div', { class: 'dash-quick' });
-  const newSale = el('button', { class: 'btn btn-primary btn-lg', type: 'button', text: '+ ' + t.sale_new });
+  const newSale = el('button', { class: 'btn btn-primary btn-lg btn-press', type: 'button', text: '+ ' + t.sale_new });
   newSale.addEventListener('click', () => navigate('sales/new'));
   quick.appendChild(newSale);
-  const newProd = el('button', { class: 'btn btn-secondary btn-lg', type: 'button', text: '+ ' + t.prod_add });
+  const newProd = el('button', { class: 'btn btn-secondary btn-lg btn-press', type: 'button', text: '+ ' + t.prod_add });
   newProd.addEventListener('click', () => navigate('products/new'));
   quick.appendChild(newProd);
   wrap.appendChild(quick);
-
-  if (outstanding && outstanding.length) {
-    let overdueCount = 0, dueSoonCount = 0, totalOutstanding = 0;
-    for (const s of outstanding) {
-      totalOutstanding += Number(s.balance || 0);
-      const st = dueStatus(s.due_date);
-      if (st.level === 'overdue') overdueCount++;
-      else if (st.level === 'today' || st.level === 'soon') dueSoonCount++;
-    }
-
-    const debtCard = el('div', { class: 'dash-card', style: 'border-left:3px solid var(--warning);' });
-    const dh = el('div', { class: 'dash-card-head' });
-    dh.appendChild(el('div', { class: 'dash-card-title', text: t.debt_dashboard_title }));
-    const seeAll = el('div', { class: 'dash-card-link', text: t.debt_view_payments });
-    seeAll.addEventListener('click', () => navigate('payments'));
-    dh.appendChild(seeAll);
-    debtCard.appendChild(dh);
-
-    const statGrid = el('div', { class: 'dash-grid', style: 'margin-bottom:10px;' });
-    statGrid.appendChild(metric(t.debt_overdue_count, String(overdueCount), overdueCount > 0 ? 'error' : 'success'));
-    statGrid.appendChild(metric(t.debt_due_soon_count, String(dueSoonCount), dueSoonCount > 0 ? 'warn' : 'success'));
-    statGrid.appendChild(metric(t.debt_total_outstanding, money(totalOutstanding), totalOutstanding > 0 ? 'warn' : 'success'));
-    debtCard.appendChild(statGrid);
-
-    const sorted = outstanding.slice().sort((a, b) => {
-      const sa = dueStatus(a.due_date), sb = dueStatus(b.due_date);
-      const wa = sa.level === 'overdue' ? 0 : sa.level === 'today' ? 1 : sa.level === 'soon' ? 2 : 3;
-      const wb = sb.level === 'overdue' ? 0 : sb.level === 'today' ? 1 : sb.level === 'soon' ? 2 : 3;
-      return wa - wb;
-    }).slice(0, 5);
-
-    for (const s of sorted) {
-      const item = el('div', { class: 'dash-list-item' });
-      const l = el('div', { class: 'dash-list-left' });
-      l.appendChild(el('div', { class: 'dash-list-title', text: (s.customers && s.customers.name) || t.sale_walkin }));
-      l.appendChild(el('div', { class: 'dash-list-sub', text: s.sale_number + (s.due_date ? ' · ' + date(s.due_date) : '') }));
-      item.appendChild(l);
-      const r = el('div', { class: 'dash-list-right' });
-      r.appendChild(el('div', { class: 'dash-list-title', text: money(s.balance) }));
-      if (s.due_date) r.appendChild(el('span', { class: dueBadgeClass(s.due_date), text: countdownText(s.due_date) }));
-      item.appendChild(r);
-      item.addEventListener('click', () => navigate('sales/view/' + s.id));
-      debtCard.appendChild(item);
-    }
-    wrap.appendChild(debtCard);
-  }
 
   const grid = el('div', { class: 'dash-grid' });
   grid.appendChild(metric(t.dash_week_revenue, money(data.weekRevenue)));
@@ -112,33 +66,23 @@ export async function dashboard(container) {
 
   const chartsGrid = el('div', { style: 'display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px; margin-top:16px;' });
 
-  // --- TRADING STYLE CHART ---
-  const chartCard = el('div', { class: 'dash-card' });
+  // --- FOREX TRADING CHART ---
+  const chartCard = el('div', { class: 'dash-card hover-lift' });
   chartCard.appendChild(el('div', { class: 'dash-card-title', text: t.dash_revenue_7d }));
-  const canvasWrap = el('div', { class: 'chart-canvas-wrap' });
+  const canvasWrap = el('div', { class: 'chart-canvas-wrap', style: 'height: 260px;' });
   const canvas = document.createElement('canvas');
   canvas.id = 'dash-chart';
   canvasWrap.appendChild(canvas);
   chartCard.appendChild(canvasWrap);
   chartsGrid.appendChild(chartCard);
 
-  const topCard = el('div', { class: 'dash-card' });
-  topCard.appendChild(el('div', { class: 'dash-card-title', text: t.dash_top_products }));
-  const topCanvasWrap = el('div', { class: 'chart-canvas-wrap' });
-  const topCanvas = document.createElement('canvas');
-  topCanvas.id = 'top-chart';
-  topCanvasWrap.appendChild(topCanvas);
-  topCard.appendChild(topCanvasWrap);
-  chartsGrid.appendChild(topCard);
-
   wrap.appendChild(chartsGrid);
   
   setTimeout(() => {
     drawChart(data.days);
-    drawTopProductsChart(data.topProducts);
-  }, 0);
+  }, 50);
 
-  const recentCard = el('div', { class: 'dash-card', style: 'margin-top:16px;' });
+  const recentCard = el('div', { class: 'dash-card hover-lift', style: 'margin-top:16px;' });
   const recentHead = el('div', { class: 'dash-card-head' });
   recentHead.appendChild(el('div', { class: 'dash-card-title', text: t.dash_recent_sales }));
   const seeAll = el('div', { class: 'dash-card-link', text: t.dash_see_all });
@@ -171,7 +115,7 @@ export async function dashboard(container) {
 }
 
 function metric(label, value, variant) {
-  const cls = 'dash-metric' + (variant ? ' dash-metric-' + variant : '');
+  const cls = 'dash-metric' + (variant ? ' dash-metric-' + variant : '') + ' hover-lift';
   const card = el('div', { class: cls });
   card.appendChild(el('div', { class: 'dash-metric-label', text: label }));
   card.appendChild(el('div', { class: 'dash-metric-value', text: value }));
@@ -188,9 +132,9 @@ function drawChart(days) {
   
   const ctx = canvas.getContext('2d');
   
-  // Create a gradient for the "Trading" look
-  const gradient = ctx.createLinearGradient(0, 0, 0, 250);
-  gradient.addColorStop(0, 'rgba(37,99,235,0.4)');
+  // Glowing gradient for the Forex feel
+  const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+  gradient.addColorStop(0, 'rgba(37,99,235,0.5)');
   gradient.addColorStop(1, 'rgba(37,99,235,0)');
 
   const labels = days.map((d) => d.label);
@@ -203,76 +147,49 @@ function drawChart(days) {
       datasets: [{
         label: t.sale_total,
         data: values,
-        borderColor: '#2563EB',
-        borderWidth: 2,
+        borderColor: '#3B82F6',
+        borderWidth: 3,
         backgroundColor: gradient,
         fill: true,
         tension: 0.45, // Smooth curve
-        pointRadius: 0, // No dots, like trading apps
+        pointRadius: 0, 
         pointHoverRadius: 6,
-        pointHoverBackgroundColor: '#2563EB',
-        pointHoverBorderColor: '#fff',
-        pointHoverBorderWidth: 2,
+        pointHoverBackgroundColor: '#fff',
+        pointHoverBorderColor: '#3B82F6',
+        pointHoverBorderWidth: 3,
+        shadowColor: 'rgba(59,130,246,0.5)', // Glow effect
+        shadowBlur: 10
       }],
     },
     options: {
       responsive: true, maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
+      animation: {
+        duration: 1500,
+        easing: 'easeOutQuart'
+      },
       plugins: { 
         legend: { display: false }, 
         tooltip: { 
           backgroundColor: '#111827',
-          titleFont: { size: 13 },
-          bodyFont: { size: 14, weight: 'bold' },
-          padding: 10,
+          titleFont: { size: 13, family: 'Inter' },
+          bodyFont: { size: 16, weight: 'bold', family: 'Inter' },
+          padding: 12,
           displayColors: false,
+          cornerRadius: 8,
           callbacks: { label: (ctx) => money(ctx.parsed.y) } 
         } 
       },
       scales: {
         y: { 
           beginAtZero: true, 
-          ticks: { display: false }, // Hide Y axis numbers for cleaner look
-          grid: { color: 'rgba(229, 231, 235, 0.4)', drawBorder: false } 
+          ticks: { display: false }, // Hide Y axis for clean trading look
+          grid: { display: false, drawBorder: false } 
         },
         x: { 
-          grid: { display: false }, 
-          ticks: { font: { size: 11 }, color: '#64748B' } 
+          grid: { display: false, drawBorder: false }, 
+          ticks: { font: { size: 11, family: 'Inter' }, color: '#94A3B8' } 
         },
-      },
-    },
-  });
-}
-
-function drawTopProductsChart(topProducts) {
-  if (topChartInstance) {
-    try { topChartInstance.destroy(); } catch (e) { /* ignore */ }
-    topChartInstance = null;
-  }
-  const canvas = document.getElementById('top-chart');
-  if (!canvas || !window.Chart) return;
-
-  const labels = topProducts.map(p => p.name.length > 12 ? p.name.substring(0, 12) + '...' : p.name);
-  const values = topProducts.map(p => p.revenue);
-
-  topChartInstance = new window.Chart(canvas.getContext('2d'), {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [{
-        label: t.sale_total,
-        data: values,
-        backgroundColor: 'rgba(37,99,235,0.8)',
-        borderRadius: 4,
-      }],
-    },
-    options: {
-      indexAxis: 'y',
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { beginAtZero: true, ticks: { display: false }, grid: { display: false } },
-        y: { grid: { display: false }, ticks: { font: { size: 11 } } },
       },
     },
   });

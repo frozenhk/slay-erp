@@ -4,7 +4,10 @@ export async function generateInvoice(businessId, planCode, interval) {
   const { data, error } = await supabase.rpc('generate_subscription_invoice', {
     p_business: businessId, p_plan_code: planCode, p_interval: interval
   });
-  if (error) throw error;
+  if (error) {
+    console.error("Invoice generation failed:", error);
+    throw new Error(error.message || "Failed to generate invoice");
+  }
   return data;
 }
 
