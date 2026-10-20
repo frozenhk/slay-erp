@@ -8,20 +8,20 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./css/tokens.css?v=27">
-<link rel="stylesheet" href="./css/base.css?v=27">
-<link rel="stylesheet" href="./css/components.css?v=27">
-<link rel="stylesheet" href="./css/account.css?v=27">
-<link rel="stylesheet" href="./css/products.css?v=27">
-<link rel="stylesheet" href="./css/inventory.css?v=27">
-<link rel="stylesheet" href="./css/customers.css?v=27">
-<link rel="stylesheet" href="./css/sales.css?v=27">
-<link rel="stylesheet" href="./css/invoice.css?v=27">
-<link rel="stylesheet" href="./css/dashboard.css?v=27">
-<link rel="stylesheet" href="./css/expenses.css?v=27">
-<link rel="stylesheet" href="./css/reports.css?v=27">
-<link rel="stylesheet" href="./css/users.css?v=27">
-<link rel="stylesheet" href="./css/support.css?v=27">
+<link rel="stylesheet" href="./css/tokens.css?v=31">
+<link rel="stylesheet" href="./css/base.css?v=31">
+<link rel="stylesheet" href="./css/components.css?v=31">
+<link rel="stylesheet" href="./css/account.css?v=31">
+<link rel="stylesheet" href="./css/products.css?v=31">
+<link rel="stylesheet" href="./css/inventory.css?v=31">
+<link rel="stylesheet" href="./css/customers.css?v=31">
+<link rel="stylesheet" href="./css/sales.css?v=31">
+<link rel="stylesheet" href="./css/invoice.css?v=31">
+<link rel="stylesheet" href="./css/dashboard.css?v=31">
+<link rel="stylesheet" href="./css/expenses.css?v=31">
+<link rel="stylesheet" href="./css/reports.css?v=31">
+<link rel="stylesheet" href="./css/users.css?v=31">
+<link rel="stylesheet" href="./css/support.css?v=31">
 <link rel="manifest" href="./manifest.json">
 <link rel="icon" href="./assets/logo.svg" type="image/svg+xml">
 <style>
@@ -66,20 +66,24 @@
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function(){
-      navigator.serviceWorker.register('./sw.js').then(function(reg) {
+      // The magic fix: updateViaCache: 'none'
+      navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).then(function(reg) {
         reg.onupdatefound = function() {
           var installingWorker = reg.installing;
           installingWorker.onstatechange = function() {
             if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              console.log('New version found. Reloading...');
               window.location.reload();
             }
           };
         };
-      }).catch(function(){});
+      }).catch(function(err){
+        console.error('SW registration failed:', err);
+      });
     });
   }
 })();
 </script>
-<script type="module" src="./js/app.js?v=27"></script>
+<script type="module" src="./js/app.js?v=31"></script>
 </body>
 </html>
