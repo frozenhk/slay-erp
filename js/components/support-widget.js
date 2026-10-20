@@ -37,59 +37,31 @@ export function buildSupportWidget() {
   document.body.appendChild(fab);
   document.body.appendChild(chat);
 
-  // --- SMART POINTER DRAG & TAP LOGIC ---
-  let isDragging = false;
-  let hasMoved = false;
-  let startX, startY, initialX, initialY;
-
+  // Draggable Logic
+  let isDragging = false, hasMoved = false, startX, startY, initialX, initialY;
   const savedX = localStorage.getItem('slay-fab-x'), savedY = localStorage.getItem('slay-fab-y');
-  if (savedX !== null && savedY !== null) { 
-    fab.style.right = 'auto'; fab.style.bottom = 'auto'; 
-    fab.style.left = savedX + 'px'; fab.style.top = savedY + 'px'; 
-  }
+  if (savedX !== null && savedY !== null) { fab.style.right = 'auto'; fab.style.bottom = 'auto'; fab.style.left = savedX + 'px'; fab.style.top = savedY + 'px'; }
   
   fab.addEventListener('pointerdown', (e) => {
-    startX = e.clientX; 
-    startY = e.clientY;
-    initialX = fab.offsetLeft; 
-    initialY = fab.offsetTop;
-    isDragging = true; 
-    hasMoved = false;
+    startX = e.clientX; startY = e.clientY; initialX = fab.offsetLeft; initialY = fab.offsetTop;
+    isDragging = true; hasMoved = false;
     fab.setPointerCapture(e.pointerId);
   });
-  
   fab.addEventListener('pointermove', (e) => {
     if (!isDragging) return;
-    const dx = e.clientX - startX;
-    const dy = e.clientY - startY;
-    
+    const dx = e.clientX - startX; const dy = e.clientY - startY;
     if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
-      hasMoved = true; 
-      fab.style.right = 'auto'; 
-      fab.style.bottom = 'auto';
+      hasMoved = true; fab.style.right = 'auto'; fab.style.bottom = 'auto';
       fab.style.left = Math.max(10, Math.min(initialX + dx, window.innerWidth - 66)) + 'px';
       fab.style.top = Math.max(10, Math.min(initialY + dy, window.innerHeight - 66)) + 'px';
     }
   });
-  
   fab.addEventListener('pointerup', (e) => {
-    if (!isDragging) return;
-    isDragging = false;
-    
-    if (hasMoved) {
-      // It was a drag, save position
-      localStorage.setItem('slay-fab-x', fab.offsetLeft); 
-      localStorage.setItem('slay-fab-y', fab.offsetTop); 
-    } else {
-      // It was a TAP! Open/close the chat.
-      chat.classList.toggle('open');
-      if (chat.classList.contains('open') && tabChat.classList.contains('active')) {
-        loadMessages();
-      }
-    }
+    if (!isDragging) return; isDragging = false;
+    if (hasMoved) { localStorage.setItem('slay-fab-x', fab.offsetLeft); localStorage.setItem('slay-fab-y', fab.offsetTop); }
+    else { chat.classList.toggle('open'); if (chat.classList.contains('open') && tabChat.classList.contains('active')) loadMessages(); }
   });
 
-  // --- CHAT LOGIC ---
   const faqs = [
     { q: 'How do I add a product?', a: 'Go to Products -> Add Product.' },
     { q: 'How do I receive stock?', a: 'Go to Inventory -> Adjust -> Receive Stock.' }
@@ -106,21 +78,25 @@ export function buildSupportWidget() {
   }
 
   let currentTicketId = null;
+  let lastMessageId = null; // Track the last message so we don't redraw if nothing changed
 
   async function checkUnread() {
-    if (!currentTicketId || (chat.classList.contains('open') && tabChat.classList.contains('active'))) {
-      badge.style.display = 'none';
-      return;
-    }
+    if (!currentTicketId || (chat.classList.contains('open') && tabChat.classList.contains('active'))) { badge.style.display = 'none'; return; }
     const count = await getUnreadCount('user', currentTicketId);
-    if (count > 0) { badge.style.display = 'block'; badge.textContent = count; }
-    else { badge.style.display = 'none'; }
+    if (count > 0) { badge.style.display = 'block'; badge.textContent = count; } else { badge.style.display = 'none'; }
   }
 
   async function loadMessages() {
     if (!currentTicketId) return;
     const msgs = await getMessages(currentTicketId);
-    body.innerHTML = '';
+    
+    // SMART DIFFING: If no messages or the last message is the same, DO NOTHING (prevents blinking)
+    if (msgs.length === 0) return;
+    const newLastId = msgs[msgs.length - 1].id;
+    if (newLastId === lastMessageId) return;
+
+    lastMessageId = newLastId;
+    body.innerHTML = ''; // Only clear if there's actually a new message
     msgs.forEach(m => {
       const bubble = el('div', { class: 'msg-bubble ' + (m.sender_type === 'user' ? 'msg-user' : 'msg-admin') });
       bubble.appendChild(el('div', { text: m.message }));
@@ -128,6 +104,7 @@ export function buildSupportWidget() {
       body.appendChild(bubble);
     });
     body.scrollTop = body.scrollHeight;
+    
     await markMessagesRead(currentTicketId, 'user');
     await checkUnread();
   }
@@ -135,14 +112,15 @@ export function buildSupportWidget() {
   getOrCreateTicket(state.currentBusiness.id, state.user.id, 'App Support').then(id => {
     currentTicketId = id;
     checkUnread();
+    if (chat.classList.contains('open') && tabChat.classList.contains('active')) loadMessages();
   });
 
   tabChat.onclick = async () => {
     tabChat.classList.add('active'); tabFaq.classList.remove('active');
     inputArea.style.display = 'flex';
     if (!currentTicketId) currentTicketId = await getOrCreateTicket(state.currentBusiness.id, state.user.id, 'App Support');
+    lastMessageId = null; // Force reload when switching tabs
     loadMessages();
-    setInterval(loadMessages, 2000);
   };
 
   sendBtn.onclick = async () => {
@@ -150,11 +128,13 @@ export function buildSupportWidget() {
     if (!txt || !currentTicketId) return;
     input.value = '';
     await sendMessage(currentTicketId, state.user.id, 'user', txt);
+    lastMessageId = null; // Force reload to show our own message
     loadMessages();
   };
 
   tabFaq.onclick = () => { tabFaq.classList.add('active'); tabChat.classList.remove('active'); inputArea.style.display = 'none'; renderFaq(); };
   
-  setInterval(checkUnread, 3000);
+  setInterval(checkUnread, 2000);
+  setInterval(loadMessages, 2000); // This runs every 2s, but won't blink because of the lastMessageId check
   renderFaq();
 }

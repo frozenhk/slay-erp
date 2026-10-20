@@ -18,7 +18,6 @@ export async function adminSupportPage(container) {
     
     for (const t of tickets) {
       const unreadCount = await getUnreadCount('admin', t.id);
-      
       const card = el('div', { class: 'card', style: 'cursor:pointer; display:flex; justify-content:space-between; align-items:center;' });
       
       const left = el('div');
@@ -37,7 +36,6 @@ export async function adminSupportPage(container) {
   }
   await loadTickets();
   
-  // Auto-refresh the admin inbox list every 2 seconds
   const interval = setInterval(async () => {
     if (!document.body.contains(wrap)) { clearInterval(interval); return; }
     await loadTickets();
@@ -65,8 +63,16 @@ async function openTicket(t, container) {
   inputRow.appendChild(input); inputRow.appendChild(btn);
   wrap.appendChild(inputRow);
 
+  let lastMessageId = null; // Track to prevent blinking
+
   async function loadMsgs() {
     const msgs = await getMessages(t.id);
+    if (msgs.length === 0) return;
+    
+    const newLastId = msgs[msgs.length - 1].id;
+    if (newLastId === lastMessageId) return; // No new messages, do nothing
+    
+    lastMessageId = newLastId;
     chatBox.innerHTML = '';
     msgs.forEach(m => {
       const b = el('div', { class: 'msg-bubble ' + (m.sender_type === 'admin' ? 'msg-user' : 'msg-admin') });
@@ -74,7 +80,7 @@ async function openTicket(t, container) {
       chatBox.appendChild(b);
     });
     chatBox.scrollTop = chatBox.scrollHeight;
-    await markMessagesRead(t.id, 'admin'); // Clear admin unread badge
+    await markMessagesRead(t.id, 'admin');
   }
 
   btn.onclick = async () => {
@@ -82,9 +88,13 @@ async function openTicket(t, container) {
     if (!txt) return;
     input.value = '';
     await sendMessage(t.id, state.user.id, 'admin', txt);
+    lastMessageId = null; // Force reload to show our own sent message
     loadMsgs();
   };
 
   loadMsgs();
-  setInterval(loadMsgs, 2000);
+  const interval = setInterval(async () => {
+    if (!document.body.contains(chatBox)) { clearInterval(interval); return; }
+    await loadMsgs();
+  }, 2000);
 }
