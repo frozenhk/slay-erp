@@ -30,6 +30,9 @@ import { usersPage } from './pages/users.js';
 import { settingsPage } from './pages/settings.js';
 import { morePage } from './pages/more.js';
 import { notificationsPage } from './pages/notifications.js';
+import { subscriptionPage } from './pages/subscription.js';
+import { pricingPage } from './pages/pricing.js';
+import { adminBusinessesPage } from './pages/admin-businesses.js';
 import { state, resetState, setCurrentBusiness } from './state.js';
 import { loadSession, loadUserData, routeAfterAuth } from './auth.js';
 import { buildShell, setActiveNav, refreshAvatar, refreshBell } from './shell.js';
@@ -47,12 +50,8 @@ const SESSION_ROUTE_KEY = 'slay-last-route-session';
 
 const NO_RESTORE_HEAD = ['login', 'signup', 'forgot', 'check-email', 'reset', 'onboarding', 'switcher', ''];
 
-function rawRoute() {
-  return (location.hash || '').replace(/^#\/?/, '');
-}
-function getCurrentPath() {
-  return rawRoute().split('/')[0] || 'dashboard';
-}
+function rawRoute() { return (location.hash || '').replace(/^#\/?/, ''); }
+function getCurrentPath() { return rawRoute().split('/')[0] || 'dashboard'; }
 function isRestorableRoute(route) {
   if (!route) return false;
   const head = route.split('/')[0];
@@ -69,12 +68,9 @@ function saveLastRoute() {
 function getLastRoute() {
   let route = '';
   try { route = localStorage.getItem(LAST_ROUTE_KEY) || ''; } catch (e) { /* ignore */ }
-  if (!route) {
-    try { route = sessionStorage.getItem(SESSION_ROUTE_KEY) || ''; } catch (e) { /* ignore */ }
-  }
+  if (!route) { try { route = sessionStorage.getItem(SESSION_ROUTE_KEY) || ''; } catch (e) { /* ignore */ } }
   return route;
 }
-
 function restoreRouteIfMissing() {
   if (rawRoute()) return;
   const saved = getLastRoute();
@@ -82,28 +78,18 @@ function restoreRouteIfMissing() {
   try { location.hash = '#/' + saved; } catch (e) { /* ignore */ }
 }
 
-// Watchdog: every 500ms, save the current route and restore it if missing.
-// This is the belt-and-braces guarantee — if the WebView or browser ever
-// wipes the URL back to the base, we put the user back within half a second.
 setInterval(() => {
   saveLastRoute();
-  if (!rawRoute() && state.user) {
-    restoreRouteIfMissing();
-  }
+  if (!rawRoute() && state.user) restoreRouteIfMissing();
 }, 500);
 
 window.addEventListener('hashchange', saveLastRoute);
 window.addEventListener('pagehide', saveLastRoute);
 window.addEventListener('beforeunload', saveLastRoute);
-window.addEventListener('pageshow', () => {
-  if (!rawRoute() && state.user) restoreRouteIfMissing();
-});
+window.addEventListener('pageshow', () => { if (!rawRoute() && state.user) restoreRouteIfMissing(); });
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'hidden') {
-    saveLastRoute();
-  } else if (document.visibilityState === 'visible') {
-    if (!rawRoute() && state.user) restoreRouteIfMissing();
-  }
+  if (document.visibilityState === 'hidden') saveLastRoute();
+  else if (document.visibilityState === 'visible') { if (!rawRoute() && state.user) restoreRouteIfMissing(); }
 });
 
 function hasRecoveryInUrl() {
@@ -120,9 +106,7 @@ function isResetFlow() {
   try { if (localStorage.getItem(RESET_FLAG) === '1') return true; } catch (e) { /* ignore */ }
   return hasRecoveryInUrl();
 }
-function setResetFlag() {
-  try { localStorage.setItem(RESET_FLAG, '1'); } catch (e) { /* ignore */ }
-}
+function setResetFlag() { try { localStorage.setItem(RESET_FLAG, '1'); } catch (e) { /* ignore */ } }
 
 function registerRoutes() {
   register('login', login); register('signup', signup); register('forgot', forgot);
@@ -157,6 +141,9 @@ function registerRoutes() {
   register('settings', settingsPage);
   register('more', morePage);
   register('notifications', notificationsPage);
+  register('subscription', subscriptionPage);
+  register('pricing', pricingPage);
+  register('admin/businesses', adminBusinessesPage);
   register('*', notfound);
 }
 
@@ -169,7 +156,8 @@ function guard(path) {
   if (state.user && !isResetFlow()) {
     const list = state.businesses || [];
     if (list.length === 0 && path !== 'onboarding') { navigate('onboarding'); return; }
-    if (list.length > 0 && !NO_GUARD.includes(path) && !canAccess(state.role, path)) {
+    if (list.length > 0 && !NO_GUARD.includes(path)
+        && path !== 'admin' && !canAccess(state.role, path)) {
       navigate('dashboard'); return;
     }
   }
@@ -221,9 +209,8 @@ async function boot() {
 
     if (!hasRoute) {
       const saved = getLastRoute();
-      if (isRestorableRoute(saved) && list.length > 0) {
-        location.hash = '#/' + saved;
-      } else if (list.length === 0) location.hash = '#/onboarding';
+      if (isRestorableRoute(saved) && list.length > 0) { location.hash = '#/' + saved; }
+      else if (list.length === 0) location.hash = '#/onboarding';
       else if (list.length === 1) {
         setCurrentBusiness(list[0].business, list[0].role);
         location.hash = '#/dashboard';
@@ -246,10 +233,7 @@ async function boot() {
   if (state.currentBusiness && state.currentBusiness.id) {
     setTimeout(async () => {
       try {
-        const r = await scanForDebtReminders(
-          state.currentBusiness.id,
-          state.currentBusiness.name || '',
-        );
+        const r = await scanForDebtReminders(state.currentBusiness.id, state.currentBusiness.name || '');
         if (r && r.added) refreshBell();
       } catch (e) { console.error('scanForDebtReminders', e); }
     }, 1200);

@@ -44,13 +44,10 @@ export function upgradeMessage(t, res, feature) {
 export async function guardFeature(businessId, feature, t, toast) {
   const res = await can(businessId, feature);
   if (res.ok) return true;
-
-  // Platform admins bypass everything
   if (res.reason === 'platform_admin') return true;
 
   const msg = upgradeMessage(t, res, feature);
 
-  // If it's a limit or feature restriction, show a professional upgrade modal
   if (res.reason === 'limit_reached' || res.reason === 'feature_not_in_plan') {
     const body = el('div', { class: 'col' }, [
       el('div', { class: 'state-text', text: msg, style: 'text-align:left;font-size:14px;' }),
@@ -65,7 +62,6 @@ export async function guardFeature(businessId, feature, t, toast) {
       ],
     });
   } else {
-    // For other errors (e.g. expired subscription), use a toast
     if (typeof toast === 'function') toast(msg, 'error', 5000);
   }
   return false;

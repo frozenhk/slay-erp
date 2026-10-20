@@ -130,7 +130,6 @@ function productCard(p, stockMap, reload) {
   }
 
   const card = el('div', { class: 'prod-card' });
-
   const thumb = el('div', { class: 'prod-thumb' });
   if (p.image_url) {
     const img = document.createElement('img');
@@ -168,8 +167,6 @@ function productCard(p, stockMap, reload) {
   right.appendChild(badge);
   card.appendChild(right);
 
-  card.addEventListener('click', () => {
-    openProductModal({ mode: 'edit', id: p.id }, reload);
-  });
+  card.addEventListener('click', () => { openProductModal({ mode: 'edit', id: p.id }, reload); });
   return card;
 }
