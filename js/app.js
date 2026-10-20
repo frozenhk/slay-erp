@@ -2,6 +2,7 @@ import './supabase.js';
 import { supabase } from './supabase.js';
 import { t, initLang } from './i18n.js';
 import { register, startRouter, navigate, onRouteChange } from './router.js';
+import { el, modal, toast } from './ui.js';
 import { notfound } from './pages/notfound.js';
 import { login } from './pages/login.js';
 import { signup } from './pages/signup.js';
@@ -33,60 +34,39 @@ import { notificationsPage } from './pages/notifications.js';
 import { subscriptionPage } from './pages/subscription.js';
 import { pricingPage } from './pages/pricing.js';
 import { adminBusinessesPage } from './pages/admin-businesses.js';
+import { recoveryPage } from './pages/recovery.js';
+import { adminSupportPage } from './pages/admin-support.js';
 import { state, resetState, setCurrentBusiness } from './state.js';
 import { loadSession, loadUserData, routeAfterAuth } from './auth.js';
 import { buildShell, setActiveNav, refreshAvatar, refreshBell } from './shell.js';
 import { canAccess } from './permissions.js';
 import { scanForDebtReminders } from './lib/notifications.js';
+import { buildSupportWidget } from './components/support-widget.js';
+import { listMyInvites, acceptInvite, declineInvite } from './api/invitations.js';
 
 const PUBLIC_PAGES = ['login', 'signup', 'forgot', 'check-email', 'reset'];
 const AUTH_REDIRECT = ['login', 'signup', 'forgot'];
-const NO_GUARD = ['login', 'signup', 'forgot', 'check-email', 'reset',
-  'switcher', 'onboarding', '*'];
-
+const NO_GUARD = ['login', 'signup', 'forgot', 'check-email', 'reset', 'switcher', 'onboarding', '*'];
 const RESET_FLAG = 'slay-reset-pending';
 const LAST_ROUTE_KEY = 'slay-last-route';
-const SESSION_ROUTE_KEY = 'slay-last-route-session';
-
-const NO_RESTORE_HEAD = ['login', 'signup', 'forgot', 'check-email', 'reset', 'onboarding', 'switcher', ''];
 
 function rawRoute() { return (location.hash || '').replace(/^#\/?/, ''); }
 function getCurrentPath() { return rawRoute().split('/')[0] || 'dashboard'; }
-function isRestorableRoute(route) {
-  if (!route) return false;
-  const head = route.split('/')[0];
-  if (NO_RESTORE_HEAD.includes(head)) return false;
-  return true;
-}
 
 function saveLastRoute() {
   const route = rawRoute();
-  if (!isRestorableRoute(route)) return;
-  try { localStorage.setItem(LAST_ROUTE_KEY, route); } catch (e) { /* ignore */ }
-  try { sessionStorage.setItem(SESSION_ROUTE_KEY, route); } catch (e) { /* ignore */ }
+  if (PUBLIC_PAGES.includes(route.split('/')[0])) return;
+  try { localStorage.setItem(LAST_ROUTE_KEY, route); } catch (e) { }
 }
-function getLastRoute() {
-  let route = '';
-  try { route = localStorage.getItem(LAST_ROUTE_KEY) || ''; } catch (e) { /* ignore */ }
-  if (!route) { try { route = sessionStorage.getItem(SESSION_ROUTE_KEY) || ''; } catch (e) { /* ignore */ } }
-  return route;
-}
+function getLastRoute() { try { return localStorage.getItem(LAST_ROUTE_KEY) || ''; } catch (e) { return ''; } }
 function restoreRouteIfMissing() {
   if (rawRoute()) return;
   const saved = getLastRoute();
-  if (!isRestorableRoute(saved)) return;
-  try { location.hash = '#/' + saved; } catch (e) { /* ignore */ }
+  if (saved) { try { location.hash = '#/' + saved; } catch (e) { } }
 }
 
-setInterval(() => {
-  saveLastRoute();
-  if (!rawRoute() && state.user) restoreRouteIfMissing();
-}, 500);
-
+setInterval(() => { saveLastRoute(); if (!rawRoute() && state.user) restoreRouteIfMissing(); }, 500);
 window.addEventListener('hashchange', saveLastRoute);
-window.addEventListener('pagehide', saveLastRoute);
-window.addEventListener('beforeunload', saveLastRoute);
-window.addEventListener('pageshow', () => { if (!rawRoute() && state.user) restoreRouteIfMissing(); });
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') saveLastRoute();
   else if (document.visibilityState === 'visible') { if (!rawRoute() && state.user) restoreRouteIfMissing(); }
@@ -94,19 +74,10 @@ document.addEventListener('visibilitychange', () => {
 
 function hasRecoveryInUrl() {
   const href = String(window.location.href || '');
-  if (href.indexOf('type=recovery') !== -1) return true;
-  if (href.indexOf('access_token=') !== -1 && href.indexOf('recovery') !== -1) return true;
-  try {
-    const u = new URL(href);
-    if (u.searchParams.get('type') === 'recovery') return true;
-  } catch (e) { /* ignore */ }
-  return false;
+  return href.indexOf('type=recovery') !== -1 || (href.indexOf('access_token=') !== -1 && href.indexOf('recovery') !== -1);
 }
-function isResetFlow() {
-  try { if (localStorage.getItem(RESET_FLAG) === '1') return true; } catch (e) { /* ignore */ }
-  return hasRecoveryInUrl();
-}
-function setResetFlag() { try { localStorage.setItem(RESET_FLAG, '1'); } catch (e) { /* ignore */ } }
+function isResetFlow() { try { if (localStorage.getItem(RESET_FLAG) === '1') return true; } catch (e) { } return hasRecoveryInUrl(); }
+function setResetFlag() { try { localStorage.setItem(RESET_FLAG, '1'); } catch (e) { } }
 
 function registerRoutes() {
   register('login', login); register('signup', signup); register('forgot', forgot);
@@ -143,27 +114,23 @@ function registerRoutes() {
   register('notifications', notificationsPage);
   register('subscription', subscriptionPage);
   register('pricing', pricingPage);
-  
-  // FIXED: Admin routing
   register('admin', async (c, p) => {
     if (p && p[0] === 'businesses') return adminBusinessesPage(c);
+    if (p && p[0] === 'support') return adminSupportPage(c);
     return navigate('more');
   });
-  
+  register('recovery', recoveryPage);
   register('*', notfound);
 }
 
 function guard(path) {
-  if (isResetFlow() && path !== 'reset' && path !== 'login' && path !== 'check-email') {
-    navigate('reset'); return;
-  }
+  if (isResetFlow() && !['reset', 'login', 'check-email'].includes(path)) { navigate('reset'); return; }
   if (!state.user && !PUBLIC_PAGES.includes(path)) { navigate('login'); return; }
   if (state.user && AUTH_REDIRECT.includes(path) && !isResetFlow()) { routeAfterAuth(); return; }
   if (state.user && !isResetFlow()) {
     const list = state.businesses || [];
     if (list.length === 0 && path !== 'onboarding') { navigate('onboarding'); return; }
-    if (list.length > 0 && !NO_GUARD.includes(path)
-        && path !== 'admin' && !canAccess(state.role, path)) {
+    if (list.length > 0 && !NO_GUARD.includes(path) && path !== 'admin' && path !== 'recovery' && !canAccess(state.role, path)) {
       navigate('dashboard'); return;
     }
   }
@@ -171,6 +138,23 @@ function guard(path) {
   refreshAvatar();
   refreshBell();
   saveLastRoute();
+}
+
+async function showInvitePopup() {
+  const invites = await listMyInvites();
+  if (!invites.length) return;
+  const inv = invites[0];
+  const bizName = inv.businesses ? inv.businesses.name : 'a business';
+  const body = el('div', { class: 'col' }, [
+    el('p', { text: `You have been invited to join ${bizName} as a ${inv.role}.` }),
+  ]);
+  modal({
+    title: 'New Invitation', body,
+    actions: [
+      { label: 'Decline', class: 'btn-secondary', onClick: async (c) => { await declineInvite(inv.id); c(); showInvitePopup(); } },
+      { label: 'Accept', class: 'btn-primary', onClick: async (c) => { await acceptInvite(inv.id); c(); toast('Joined!', 'success'); await loadUserData(); location.reload(); } }
+    ]
+  });
 }
 
 async function boot() {
@@ -182,66 +166,49 @@ async function boot() {
 
   supabase.auth.onAuthStateChange(async (event) => {
     if (event === 'PASSWORD_RECOVERY') { setResetFlag(); navigate('reset'); return; }
-    if (event === 'SIGNED_OUT') {
-      if (isResetFlow()) { navigate('reset'); return; }
-      resetState(); navigate('login'); return;
-    }
-    if (event === 'SIGNED_IN') {
-      if (isResetFlow()) { navigate('reset'); return; }
-      if (!state.user) return;
-      try { await loadUserData(); } catch (e) { /* ignore */ }
-    }
+    if (event === 'SIGNED_OUT') { if (isResetFlow()) { navigate('reset'); return; } resetState(); navigate('login'); return; }
+    if (event === 'SIGNED_IN' && !isResetFlow() && state.user) { try { await loadUserData(); } catch (e) { } }
   });
 
   if (hasRecoveryInUrl()) setResetFlag();
-
   const session = await loadSession();
   if (session) {
     try {
       await loadUserData();
       const list = state.businesses || [];
       if (list.length === 1) setCurrentBusiness(list[0].business, list[0].role);
-    } catch (err) { console.error('loadUserData failed', err); resetState(); }
+    } catch (err) { console.error(err); resetState(); }
   }
 
-  if (isResetFlow()) {
-    if (getCurrentPath() !== 'reset') location.hash = '#/reset';
-  } else if (!state.user) {
-    if (!PUBLIC_PAGES.includes(getCurrentPath())) location.hash = '#/login';
-  } else {
+  if (isResetFlow()) { if (getCurrentPath() !== 'reset') location.hash = '#/reset'; }
+  else if (!state.user) { if (!PUBLIC_PAGES.includes(getCurrentPath())) location.hash = '#/login'; }
+  else {
     const list = state.businesses || [];
     const p = getCurrentPath();
-    const hasRoute = !!rawRoute();
-
-    if (!hasRoute) {
+    if (!rawRoute()) {
       const saved = getLastRoute();
-      if (isRestorableRoute(saved) && list.length > 0) { location.hash = '#/' + saved; }
+      if (saved && list.length > 0) location.hash = '#/' + saved;
       else if (list.length === 0) location.hash = '#/onboarding';
-      else if (list.length === 1) {
-        setCurrentBusiness(list[0].business, list[0].role);
-        location.hash = '#/dashboard';
-      } else location.hash = '#/switcher';
+      else if (list.length === 1) { setCurrentBusiness(list[0].business, list[0].role); location.hash = '#/dashboard'; }
+      else location.hash = '#/switcher';
     } else if (AUTH_REDIRECT.includes(p) || p === 'check-email') {
       if (list.length === 0) location.hash = '#/onboarding';
-      else if (list.length === 1) {
-        setCurrentBusiness(list[0].business, list[0].role);
-        location.hash = '#/dashboard';
-      } else location.hash = '#/switcher';
-    } else if (list.length === 0 && p !== 'onboarding') {
-      location.hash = '#/onboarding';
-    } else if (list.length === 1 && !state.currentBusiness) {
-      setCurrentBusiness(list[0].business, list[0].role);
-    }
+      else if (list.length === 1) { setCurrentBusiness(list[0].business, list[0].role); location.hash = '#/dashboard'; }
+      else location.hash = '#/switcher';
+    } else if (list.length === 0 && p !== 'onboarding') location.hash = '#/onboarding';
+    else if (list.length === 1 && !state.currentBusiness) setCurrentBusiness(list[0].business, list[0].role);
   }
 
   startRouter();
 
+  if (state.user) {
+    setTimeout(showInvitePopup, 1500);
+    buildSupportWidget();
+  }
+
   if (state.currentBusiness && state.currentBusiness.id) {
     setTimeout(async () => {
-      try {
-        const r = await scanForDebtReminders(state.currentBusiness.id, state.currentBusiness.name || '');
-        if (r && r.added) refreshBell();
-      } catch (e) { console.error('scanForDebtReminders', e); }
+      try { const r = await scanForDebtReminders(state.currentBusiness.id, state.currentBusiness.name || ''); if (r && r.added) refreshBell(); } catch (e) { }
     }, 1200);
   }
 }
