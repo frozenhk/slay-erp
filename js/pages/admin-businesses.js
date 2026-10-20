@@ -23,7 +23,14 @@ export async function adminBusinessesPage(container) {
   try {
     rows = await adminListBusinesses();
     plans = await listPlans();
-    pending = await listPendingPayments();
+    
+    // Safely try to load payments, but don't crash if the table is missing
+    try {
+      pending = await listPendingPayments();
+    } catch (payErr) {
+      console.warn('Could not load pending payments:', payErr);
+      pending = [];
+    }
   } catch (err) {
     loading.innerHTML = '';
     loading.appendChild(el('div', { class: 'state-title', text: t.state_error_title }));
@@ -32,14 +39,15 @@ export async function adminBusinessesPage(container) {
   }
   loading.remove();
 
+  // Pending Payments Section (Only shows if there are pending payments)
   if (pending.length) {
     const payCard = el('div', { class: 'card', style: 'border:2px solid var(--warning); margin-bottom:16px;' });
     payCard.appendChild(el('div', { class: 'card-title', text: 'Pending Payments (' + pending.length + ')', style: 'color:var(--warning);' }));
     for (const p of pending) {
       const row = el('div', { class: 'row-between', style: 'padding:10px 0;border-bottom:1px solid var(--border);' });
       const left = el('div');
-      left.appendChild(el('div', { class: 'prod-name', text: p.subscription_invoices.businesses.name }));
-      left.appendChild(el('div', { class: 'prod-meta', text: p.subscription_invoices.plan_code + ' - ' + p.method + ' - REF: ' + p.reference }));
+      left.appendChild(el('div', { class: 'prod-name', text: p.subscription_invoices?.businesses?.name || 'Business' }));
+      left.appendChild(el('div', { class: 'prod-meta', text: (p.subscription_invoices?.plan_code || '') + ' - ' + p.method + ' - REF: ' + p.reference }));
       row.appendChild(left);
       
       const btn = el('button', { class: 'btn btn-primary btn-sm', type: 'button', text: 'Verify & Activate' });
@@ -53,8 +61,13 @@ export async function adminBusinessesPage(container) {
     wrap.appendChild(payCard);
   }
 
+  // Businesses List
   const list = el('div', { class: 'prod-list' });
-  for (const b of rows) list.appendChild(businessCard(b, plans, () => { container.innerHTML = ''; adminBusinessesPage(container); }));
+  if (!rows.length) {
+    list.appendChild(el('div', { class: 'state' }, [el('div', { class: 'state-title', text: t.admin_no_businesses || 'No businesses yet.' })]));
+  } else {
+    for (const b of rows) list.appendChild(businessCard(b, plans, () => { container.innerHTML = ''; adminBusinessesPage(container); }));
+  }
   wrap.appendChild(list);
 }
 
@@ -69,7 +82,6 @@ function businessCard(b, plans, reload) {
   tags.appendChild(el('span', { class: 'badge badge-info', text: b.plan_code }));
   tags.appendChild(el('span', { class: 'badge ' + statusBadgeClass(b.subscription_status), text: t['sub_status_' + b.subscription_status] || b.subscription_status }));
   
-  // Fixed undefined text
   if (b.trial_ends_at) {
     tags.appendChild(el('span', { class: 'badge', text: t.sub_trial_ends + ' ' + date(b.trial_ends_at) }));
   } else if (b.current_period_end) {
@@ -79,12 +91,11 @@ function businessCard(b, plans, reload) {
 
   const actions = el('div', { class: 'row-actions', style: 'margin-top:12px;flex-wrap:wrap;' });
   
-  // Fixed blank buttons
-  const changeBtn = el('button', { class: 'btn btn-primary btn-sm btn-press', type: 'button', text: t.admin_change_plan });
+  const changeBtn = el('button', { class: 'btn btn-primary btn-sm btn-press', type: 'button', text: t.admin_change_plan || 'Change Plan' });
   changeBtn.addEventListener('click', () => openChangePlan(b, plans, reload));
   actions.appendChild(changeBtn);
 
-  const extendBtn = el('button', { class: 'btn btn-secondary btn-sm btn-press', type: 'button', text: t.admin_extend_trial });
+  const extendBtn = el('button', { class: 'btn btn-secondary btn-sm btn-press', type: 'button', text: t.admin_extend_trial || 'Extend Trial' });
   extendBtn.addEventListener('click', () => openExtendTrial(b, reload));
   actions.appendChild(extendBtn);
 
@@ -103,18 +114,18 @@ function openChangePlan(b, plans, reload) {
   const sel = el('select', { class: 'select' });
   for (const p of plans) sel.appendChild(el('option', { value: p.code, text: p.name + ' (' + p.code + ')' }));
   sel.value = b.plan_code;
-  const reason = el('input', { class: 'input', type: 'text', placeholder: t.admin_reason_ph });
+  const reason = el('input', { class: 'input', type: 'text', placeholder: t.admin_reason_ph || 'Optional note' });
   const body = el('div', { class: 'col' }, [
-    el('div', { class: 'field' }, [el('label', { class: 'label', text: t.admin_plan }), sel]),
-    el('div', { class: 'field' }, [el('label', { class: 'label', text: t.admin_reason }), reason])
+    el('div', { class: 'field' }, [el('label', { class: 'label', text: t.admin_plan || 'Plan' }), sel]),
+    el('div', { class: 'field' }, [el('label', { class: 'label', text: t.admin_reason || 'Reason' }), reason])
   ]);
 
   modal({
-    title: t.admin_change_plan, body,
+    title: t.admin_change_plan || 'Change Plan', body,
     actions: [
-      { label: t.action_cancel, class: 'btn-secondary', onClick: (c) => c() },
-      { label: t.action_save, class: 'btn-primary', onClick: async (close) => {
-        try { await adminChangePlan(b.id, sel.value, reason.value.trim() || null); close(); toast(t.admin_plan_changed, 'success'); reload(); }
+      { label: t.action_cancel || 'Cancel', class: 'btn-secondary', onClick: (c) => c() },
+      { label: t.action_save || 'Save', class: 'btn-primary', onClick: async (close) => {
+        try { await adminChangePlan(b.id, sel.value, reason.value.trim() || null); close(); toast(t.admin_plan_changed || 'Plan updated', 'success'); reload(); }
         catch (err) { toast(err.message || t.state_error_text, 'error'); }
       } },
     ],
@@ -123,20 +134,20 @@ function openChangePlan(b, plans, reload) {
 
 function openExtendTrial(b, reload) {
   const days = el('input', { class: 'input', type: 'number', min: '1', step: '1', value: '14' });
-  const reason = el('input', { class: 'input', type: 'text', placeholder: t.admin_reason_ph });
+  const reason = el('input', { class: 'input', type: 'text', placeholder: t.admin_reason_ph || 'Optional note' });
   const body = el('div', { class: 'col' }, [
-    el('div', { class: 'field' }, [el('label', { class: 'label', text: t.admin_days }), days]),
-    el('div', { class: 'field' }, [el('label', { class: 'label', text: t.admin_reason }), reason])
+    el('div', { class: 'field' }, [el('label', { class: 'label', text: t.admin_days || 'Days' }), days]),
+    el('div', { class: 'field' }, [el('label', { class: 'label', text: t.admin_reason || 'Reason' }), reason])
   ]);
 
   modal({
-    title: t.admin_extend_trial, body,
+    title: t.admin_extend_trial || 'Extend Trial', body,
     actions: [
-      { label: t.action_cancel, class: 'btn-secondary', onClick: (c) => c() },
-      { label: t.action_save, class: 'btn-primary', onClick: async (close) => {
+      { label: t.action_cancel || 'Cancel', class: 'btn-secondary', onClick: (c) => c() },
+      { label: t.action_save || 'Save', class: 'btn-primary', onClick: async (close) => {
         const n = Number(days.value);
-        if (!n || n <= 0) { toast(t.admin_days_required, 'error'); return; }
-        try { await adminExtendTrial(b.id, n, reason.value.trim() || null); close(); toast(t.admin_trial_extended, 'success'); reload(); }
+        if (!n || n <= 0) { toast(t.admin_days_required || 'Enter a number', 'error'); return; }
+        try { await adminExtendTrial(b.id, n, reason.value.trim() || null); close(); toast(t.admin_trial_extended || 'Trial extended', 'success'); reload(); }
         catch (err) { toast(err.message || t.state_error_text, 'error'); }
       } },
     ],
