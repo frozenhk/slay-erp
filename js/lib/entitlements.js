@@ -1,4 +1,6 @@
 import { checkFeature } from '../api/subscription.js';
+import { modal, el } from '../ui.js';
+import { navigate } from '../router.js';
 
 const cache = new Map();
 
@@ -41,10 +43,30 @@ export function upgradeMessage(t, res, feature) {
 
 export async function guardFeature(businessId, feature, t, toast) {
   const res = await can(businessId, feature);
-  if (!res.ok) {
-    const msg = upgradeMessage(t, res, feature);
+  if (res.ok) return true;
+
+  // Platform admins bypass everything
+  if (res.reason === 'platform_admin') return true;
+
+  const msg = upgradeMessage(t, res, feature);
+
+  // If it's a limit or feature restriction, show a professional upgrade modal
+  if (res.reason === 'limit_reached' || res.reason === 'feature_not_in_plan') {
+    const body = el('div', { class: 'col' }, [
+      el('div', { class: 'state-text', text: msg, style: 'text-align:left;font-size:14px;' }),
+      el('div', { class: 'hint', text: 'Upgrade your plan to unlock this feature and add more.' })
+    ]);
+    modal({
+      title: 'Upgrade Required',
+      body,
+      actions: [
+        { label: 'Not now', class: 'btn-secondary', onClick: (close) => close() },
+        { label: 'View Plans', class: 'btn-primary', onClick: (close) => { close(); navigate('pricing'); } },
+      ],
+    });
+  } else {
+    // For other errors (e.g. expired subscription), use a toast
     if (typeof toast === 'function') toast(msg, 'error', 5000);
-    return false;
   }
-  return true;
+  return false;
 }
