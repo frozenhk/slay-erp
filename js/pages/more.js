@@ -4,9 +4,10 @@ import { t } from '../i18n.js';
 import { state } from '../state.js';
 import { signOut } from '../auth.js';
 import { canManageUsers, canEditBusiness } from '../permissions.js';
+import { isPlatformAdmin } from '../api/subscription.js';
 import { svgIcon } from '../shell.js';
 
-export function morePage(container) {
+export async function morePage(container) {
   const wrap = el('div', { class: 'container col' });
   container.appendChild(wrap);
 
@@ -18,25 +19,40 @@ export function morePage(container) {
   const bizCard = el('div', { class: 'card' });
   bizCard.appendChild(el('div', { class: 'metric-label', text: t.account_current }));
   bizCard.appendChild(el('div', { class: 'metric-value', text: biz.name || 'Business' }));
+  
+  // FIXED: The undefinedOwner bug is gone here
+  const roleLabel = t['role_' + (state.role || 'owner')] || state.role || 'member';
   bizCard.appendChild(el('div', {
     class: 'metric-sub',
-    text: (t.role_ + '') + (t['role_' + (state.role || 'owner')] || state.role) +
-      ' · ' + (biz.currency || 'XAF'),
+    text: roleLabel + ' · ' + (biz.currency || 'XAF'),
   }));
   wrap.appendChild(bizCard);
 
   const grid = el('div', { class: 'more-grid' });
 
-  const tiles = [];
+  const tiles = [
+    { id: 'expenses', label: t.nav_expenses, desc: t.more_desc_expenses,
+      icon: 'coins', visible: true },
+    { id: 'users', label: t.users_title, desc: t.more_desc_users,
+      icon: 'user', visible: canManageUsers(state.role) },
+    { id: 'settings', label: t.settings_title, desc: t.more_desc_settings,
+      icon: 'cog', visible: canEditBusiness(state.role) },
+    { id: 'subscription', label: t.sub_title, desc: t.more_desc_sub,
+      icon: 'card', visible: true },
+  ];
 
-  tiles.push({ id: 'expenses', label: t.nav_expenses, desc: t.more_desc_expenses,
-    icon: 'coins', visible: true });
-  tiles.push({ id: 'users', label: t.users_title, desc: t.more_desc_users,
-    icon: 'user', visible: canManageUsers(state.role) });
-  tiles.push({ id: 'settings', label: t.settings_title, desc: t.more_desc_settings,
-    icon: 'cog', visible: canEditBusiness(state.role) });
-  tiles.push({ id: 'subscription', label: t.sub_title, desc: t.more_desc_sub,
-    icon: 'card', visible: true });
+  try {
+    const isAdmin = await isPlatformAdmin();
+    if (isAdmin) {
+      tiles.push({
+        id: 'admin/businesses',
+        label: t.admin_tile,
+        desc: t.admin_tile_desc,
+        icon: 'cog',
+        visible: true,
+      });
+    }
+  } catch (e) { /* ignore */ }
 
   for (const tile of tiles) {
     if (!tile.visible) continue;
@@ -46,10 +62,9 @@ export function morePage(container) {
     node.appendChild(ic);
     node.appendChild(el('div', { class: 'more-tile-label', text: tile.label }));
     node.appendChild(el('div', { class: 'more-tile-desc', text: tile.desc }));
-    node.addEventListener('click', () => {
-      if (tile.id === 'subscription') { toast(t.sub_coming, 'info'); return; }
-      navigate(tile.id);
-    });
+    
+    // FIXED: Navigate directly to the pages
+    node.addEventListener('click', () => navigate(tile.id));
     grid.appendChild(node);
   }
   wrap.appendChild(grid);

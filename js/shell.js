@@ -22,9 +22,9 @@ const ICONS = {
   coins: ['M12 8c4.97 0 9-1.34 9-3s-4.03-3-9-3-9 1.34-9 3 4.03 3 9 3Z',
     'M21 12c0 1.66-4.03 3-9 3s-9-1.34-9-3',
     'M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5'],
-  cog: ['M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z'],
-  bell: ['M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9',
-    'M13.7 21a2 2 0 0 1-3.4 0'],
+  // FIXED: Full path for the settings icon
+  cog: ['M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z', 'M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z'],
+  bell: ['M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9', 'M13.7 21a2 2 0 0 1-3.4 0'],
   dot: ['M12 12h.01'],
 };
 
@@ -49,7 +49,8 @@ function getTitles() {
     inventory: t.nav_inventory, customers: t.nav_customers, reports: t.nav_reports,
     more: t.nav_more, invoices: t.nav_invoices, payments: t.nav_payments,
     expenses: t.nav_expenses, users: t.users_title, settings: t.settings_title,
-    notifications: t.notif_title,
+    notifications: t.notif_title, subscription: t.sub_title, pricing: t.sub_pricing_title,
+    'admin/businesses': t.admin_businesses_title,
     login: t.auth_sign_in, signup: t.auth_sign_up, forgot: t.auth_forgot_title,
     'check-email': t.auth_check_email_title, reset: t.auth_forgot_title,
     switcher: t.biz_choose, onboarding: t.biz_welcome,
