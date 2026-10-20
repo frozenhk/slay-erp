@@ -76,6 +76,7 @@ export async function usersPage(container) {
       ]));
     }
   }
+
   await load();
 }
 
@@ -100,14 +101,20 @@ function memberRow(m, businessId, onDone) {
     for (const r of ROLES) sel.appendChild(el('option', { value: r, text: t['role_' + r] }));
     sel.value = m.role;
     sel.addEventListener('change', async () => {
-      try { await updateMemberRole(m.id, businessId, sel.value); toast(t.users_role_updated, 'success'); }
+      try { await updateMemberRole(m.id, businessId, sel.value); toast(t.users_role_updated, 'success'); onDone(); }
       catch (err) { toast(err.message || t.state_error_text, 'error'); onDone(); }
     });
     right.appendChild(sel);
 
-    const rm = el('button', { type: 'button', text: t.action_remove, style: 'background:transparent;border:none;color:var(--error);font-size:12px;cursor:pointer;padding:0;font-family:inherit;' });
+    const rm = el('button', {
+      type: 'button', text: t.action_remove,
+      style: 'background:transparent;border:none;color:var(--error);font-size:12px;cursor:pointer;padding:0;font-family:inherit;',
+    });
     rm.addEventListener('click', async () => {
-      const ok = await confirmDialog({ title: t.users_remove, message: t.users_remove_confirm, danger: true, confirmLabel: t.action_remove });
+      const ok = await confirmDialog({
+        title: t.users_remove, message: t.users_remove_confirm,
+        danger: true, confirmLabel: t.action_remove,
+      });
       if (!ok) return;
       try { await removeMember(m.id, businessId); toast(t.users_removed, 'success'); onDone(); }
       catch (err) { toast(err.message || t.state_error_text, 'error'); }

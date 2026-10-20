@@ -136,9 +136,14 @@ function guard(path) {
     const list = state.businesses || [];
     if (list.length === 0 && path !== 'onboarding') { navigate('onboarding'); return; }
     
+    // CRITICAL FIX: If no business is selected, but they have businesses, send to switcher
+    if (!state.currentBusiness && list.length > 0 && path !== 'switcher' && path !== 'onboarding') {
+      navigate('switcher'); return;
+    }
+
     if (state.currentBusiness && list.length > 0) {
       const chosen = localStorage.getItem('slay-plan-chosen-' + state.currentBusiness.id);
-      if (!chosen && path !== 'choose-plan' && path !== 'pricing' && path !== 'onboarding') {
+      if (!chosen && path !== 'choose-plan' && path !== 'pricing' && path !== 'onboarding' && path !== 'switcher') {
         navigate('choose-plan'); return;
       }
     }
