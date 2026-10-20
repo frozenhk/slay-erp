@@ -72,3 +72,29 @@
 .pricing-benefits { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); flex: 1; }
 .pricing-benefit-item { font-size: 13px; color: var(--text-muted); margin-bottom: 8px; display: flex; align-items: flex-start; gap: 8px; }
 .pricing-benefit-item svg { width: 16px; height: 16px; color: var(--success); flex-shrink: 0; margin-top: 2px; }
+
+/* Professional Recovery Button */
+.recovery-btn {
+  background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+  color: white !important;
+  border: none;
+  box-shadow: 0 4px 10px rgba(37,99,235,0.3);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  animation: pulse-glow 2.5s infinite;
+}
+.recovery-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(37,99,235,0.5);
+}
+.recovery-btn:active {
+  transform: scale(0.95);
+}
+.recovery-btn svg {
+  stroke: white !important;
+}
+
+@keyframes pulse-glow {
+  0% { box-shadow: 0 0 0 0 rgba(37,99,235, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(37,99,235, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(37,99,235, 0); }
+}

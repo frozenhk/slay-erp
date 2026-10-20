@@ -8,39 +8,22 @@ import { listOutstandingSales } from '../api/sales.js';
 import { countdownText, dueBadgeClass, dueStatus } from '../lib/debt.js';
 
 let chartInstance = null;
+let topChartInstance = null;
 
 export async function dashboard(container) {
   const businessId = state.currentBusiness && state.currentBusiness.id;
   const wrap = el('div', { class: 'container col' });
   container.appendChild(wrap);
 
-  if (!businessId) {
-    wrap.appendChild(el('div', { class: 'state' }, [
-      el('div', { class: 'state-title', text: t.dash_no_business }),
-    ]));
-    return;
-  }
+  if (!businessId) return;
 
   const biz = state.currentBusiness || {};
   const role = state.role || 'member';
-  const status = biz.subscription_status || 'trialing';
 
   const head = el('div');
   head.appendChild(el('h1', { text: biz.name || t.nav_dashboard }));
   head.appendChild(el('p', { class: 'muted', text: t.dash_signed_in_as + ' ' + role }));
   wrap.appendChild(head);
-
-  // Subscription warning banner
-  if (status === 'expired' || status === 'past_due' || status === 'grace_period' || status === 'suspended') {
-    const alert = el('div', {
-      class: 'card',
-      style: 'background:#FEF2F2;border-color:#FECACA;color:#991B1B;cursor:pointer;padding:12px;',
-    });
-    alert.appendChild(el('div', { style: 'font-weight:700;font-size:14px;', text: 'Subscription inactive' }));
-    alert.appendChild(el('div', { style: 'font-size:13px;margin-top:2px;', text: 'Your subscription is ' + status + '. Please renew to continue making sales.' }));
-    alert.addEventListener('click', () => navigate('subscription'));
-    wrap.appendChild(alert);
-  }
 
   const loading = el('div', { class: 'dash-grid' });
   for (let i = 0; i < 4; i++) loading.appendChild(el('div', { class: 'skeleton', style: 'height:100px;' }));
@@ -52,14 +35,7 @@ export async function dashboard(container) {
     outstanding = await listOutstandingSales(businessId);
   } catch (err) {
     loading.remove();
-    const st = el('div', { class: 'state' }, [
-      el('div', { class: 'state-title', text: t.state_error_title }),
-      el('div', { class: 'state-text', text: err.message || t.state_error_text }),
-    ]);
-    const rt = el('button', { class: 'btn btn-secondary', type: 'button', text: t.action_retry });
-    rt.addEventListener('click', () => { container.innerHTML = ''; dashboard(container); });
-    st.appendChild(rt);
-    wrap.appendChild(st);
+    wrap.appendChild(el('div', { class: 'state' }, [el('div', { class: 'state-title', text: err.message })]));
     return;
   }
   loading.remove();
@@ -67,10 +43,7 @@ export async function dashboard(container) {
   const hero = el('div', { class: 'dash-hero' });
   hero.appendChild(el('div', { class: 'dash-hero-label', text: t.dash_today_revenue }));
   hero.appendChild(el('div', { class: 'dash-hero-value', text: money(data.todayRevenue) }));
-  hero.appendChild(el('div', {
-    class: 'dash-hero-sub',
-    text: data.ordersToday + ' ' + (data.ordersToday === 1 ? t.dash_order : t.dash_orders) + ' ' + t.dash_today,
-  }));
+  hero.appendChild(el('div', { class: 'dash-hero-sub', text: data.ordersToday + ' ' + (data.ordersToday === 1 ? t.dash_order : t.dash_orders) + ' ' + t.dash_today }));
   wrap.appendChild(hero);
 
   const quick = el('div', { class: 'dash-quick' });
@@ -82,6 +55,7 @@ export async function dashboard(container) {
   quick.appendChild(newProd);
   wrap.appendChild(quick);
 
+  // --- MONEY OWED TO YOU ---
   if (outstanding && outstanding.length) {
     let overdueCount = 0, dueSoonCount = 0, totalOutstanding = 0;
     for (const s of outstanding) {
@@ -100,6 +74,7 @@ export async function dashboard(container) {
     debtCard.appendChild(dh);
 
     const statGrid = el('div', { class: 'dash-grid', style: 'margin-bottom:10px;' });
+    // FIXED: Added labels to the metric calls
     statGrid.appendChild(metric(t.debt_overdue_count, String(overdueCount), overdueCount > 0 ? 'error' : 'success'));
     statGrid.appendChild(metric(t.debt_due_soon_count, String(dueSoonCount), dueSoonCount > 0 ? 'warn' : 'success'));
     statGrid.appendChild(metric(t.debt_total_outstanding, money(totalOutstanding), totalOutstanding > 0 ? 'warn' : 'success'));
@@ -116,16 +91,11 @@ export async function dashboard(container) {
       const item = el('div', { class: 'dash-list-item' });
       const l = el('div', { class: 'dash-list-left' });
       l.appendChild(el('div', { class: 'dash-list-title', text: (s.customers && s.customers.name) || t.sale_walkin }));
-      l.appendChild(el('div', {
-        class: 'dash-list-sub',
-        text: s.sale_number + (s.due_date ? ' · ' + date(s.due_date) : ''),
-      }));
+      l.appendChild(el('div', { class: 'dash-list-sub', text: s.sale_number + (s.due_date ? ' · ' + date(s.due_date) : '') }));
       item.appendChild(l);
       const r = el('div', { class: 'dash-list-right' });
       r.appendChild(el('div', { class: 'dash-list-title', text: money(s.balance) }));
-      if (s.due_date) {
-        r.appendChild(el('span', { class: dueBadgeClass(s.due_date), text: countdownText(s.due_date) }));
-      }
+      if (s.due_date) r.appendChild(el('span', { class: dueBadgeClass(s.due_date), text: countdownText(s.due_date) }));
       item.appendChild(r);
       item.addEventListener('click', () => navigate('sales/view/' + s.id));
       debtCard.appendChild(item);
@@ -142,6 +112,10 @@ export async function dashboard(container) {
   grid.appendChild(metric(t.dash_out_stock, String(data.outStockCount), data.outStockCount > 0 ? 'error' : 'success'));
   wrap.appendChild(grid);
 
+  // --- CHARTS SECTION ---
+  const chartsGrid = el('div', { style: 'display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px; margin-top:16px;' });
+
+  // 1. Revenue Line Chart
   const chartCard = el('div', { class: 'dash-card' });
   chartCard.appendChild(el('div', { class: 'dash-card-title', text: t.dash_revenue_7d }));
   const canvasWrap = el('div', { class: 'chart-canvas-wrap' });
@@ -149,38 +123,34 @@ export async function dashboard(container) {
   canvas.id = 'dash-chart';
   canvasWrap.appendChild(canvas);
   chartCard.appendChild(canvasWrap);
-  wrap.appendChild(chartCard);
-  setTimeout(() => drawChart(data.days), 0);
+  chartsGrid.appendChild(chartCard);
 
+  // 2. Top Products Bar Chart
   const topCard = el('div', { class: 'dash-card' });
   topCard.appendChild(el('div', { class: 'dash-card-title', text: t.dash_top_products }));
-  if (!data.topProducts.length) {
-    topCard.appendChild(el('div', { class: 'muted', text: t.dash_no_data }));
-  } else {
-    const maxRev = data.topProducts[0].revenue || 1;
-    for (const p of data.topProducts) {
-      const row = el('div', { class: 'bar-row' });
-      const line = el('div', { class: 'bar-line' });
-      line.appendChild(el('div', { class: 'bar-line-name', text: p.name }));
-      line.appendChild(el('div', { text: money(p.revenue) }));
-      row.appendChild(line);
-      const track = el('div', { class: 'bar-track' });
-      const fill = el('div', { class: 'bar-fill' });
-      fill.style.width = Math.max(4, (p.revenue / maxRev) * 100) + '%';
-      track.appendChild(fill);
-      row.appendChild(track);
-      topCard.appendChild(row);
-    }
-  }
-  wrap.appendChild(topCard);
+  const topCanvasWrap = el('div', { class: 'chart-canvas-wrap' });
+  const topCanvas = document.createElement('canvas');
+  topCanvas.id = 'top-chart';
+  topCanvasWrap.appendChild(topCanvas);
+  topCard.appendChild(topCanvasWrap);
+  chartsGrid.appendChild(topCard);
 
-  const recentCard = el('div', { class: 'dash-card' });
+  wrap.appendChild(chartsGrid);
+  
+  setTimeout(() => {
+    drawChart(data.days);
+    drawTopProductsChart(data.topProducts);
+  }, 0);
+
+  // --- RECENT SALES ---
+  const recentCard = el('div', { class: 'dash-card', style: 'margin-top:16px;' });
   const recentHead = el('div', { class: 'dash-card-head' });
   recentHead.appendChild(el('div', { class: 'dash-card-title', text: t.dash_recent_sales }));
   const seeAll = el('div', { class: 'dash-card-link', text: t.dash_see_all });
   seeAll.addEventListener('click', () => navigate('sales'));
   recentHead.appendChild(seeAll);
   recentCard.appendChild(recentHead);
+  
   if (!data.recentSales.length) {
     recentCard.appendChild(el('div', { class: 'muted', text: t.dash_no_sales }));
   } else {
@@ -194,8 +164,7 @@ export async function dashboard(container) {
       const r = el('div', { class: 'dash-list-right' });
       r.appendChild(el('div', { class: 'dash-list-title', text: money(s.total) }));
       r.appendChild(el('span', {
-        class: 'badge ' + (s.payment_status === 'paid' ? 'badge-success'
-          : s.payment_status === 'partial' ? 'badge-warning' : 'badge-error'),
+        class: 'badge ' + (s.payment_status === 'paid' ? 'badge-success' : s.payment_status === 'partial' ? 'badge-warning' : 'badge-error'),
         text: t['pay_' + s.payment_status] || s.payment_status,
       }));
       item.appendChild(r);
@@ -204,38 +173,6 @@ export async function dashboard(container) {
     }
   }
   wrap.appendChild(recentCard);
-
-  const lowCard = el('div', { class: 'dash-card' });
-  const lowHead = el('div', { class: 'dash-card-head' });
-  lowHead.appendChild(el('div', { class: 'dash-card-title', text: t.dash_low_stock_alerts }));
-  const invLink = el('div', { class: 'dash-card-link', text: t.dash_see_all });
-  invLink.addEventListener('click', () => navigate('inventory'));
-  lowHead.appendChild(invLink);
-  lowCard.appendChild(lowHead);
-  if (!data.lowStockItems.length) {
-    lowCard.appendChild(el('div', { class: 'muted', text: t.dash_all_good }));
-  } else {
-    for (const row of data.lowStockItems) {
-      const item = el('div', { class: 'dash-list-item' });
-      const l = el('div', { class: 'dash-list-left' });
-      l.appendChild(el('div', { class: 'dash-list-title', text: row.product_name }));
-      const sub = row.variant_name && row.variant_name !== 'Default'
-        ? row.variant_name
-        : (row.sku ? 'SKU ' + row.sku : t.prod_variant_sing);
-      l.appendChild(el('div', { class: 'dash-list-sub', text: sub }));
-      item.appendChild(l);
-      const r = el('div', { class: 'dash-list-right' });
-      r.appendChild(el('div', { class: 'dash-list-title', text: String(row.total) }));
-      r.appendChild(el('span', {
-        class: 'badge ' + (row.total <= 0 ? 'badge-error' : 'badge-warning'),
-        text: row.total <= 0 ? t.inv_out : t.inv_low,
-      }));
-      item.appendChild(r);
-      item.addEventListener('click', () => navigate('inventory'));
-      lowCard.appendChild(item);
-    }
-  }
-  wrap.appendChild(lowCard);
 }
 
 function metric(label, value, variant) {
@@ -274,6 +211,40 @@ function drawChart(days) {
       scales: {
         y: { beginAtZero: true, ticks: { callback: (v) => money(v), font: { size: 11 } }, grid: { color: '#E5E7EB' } },
         x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+      },
+    },
+  });
+}
+
+function drawTopProductsChart(topProducts) {
+  if (topChartInstance) {
+    try { topChartInstance.destroy(); } catch (e) { /* ignore */ }
+    topChartInstance = null;
+  }
+  const canvas = document.getElementById('top-chart');
+  if (!canvas || !window.Chart) return;
+
+  const labels = topProducts.map(p => p.name.length > 12 ? p.name.substring(0, 12) + '...' : p.name);
+  const values = topProducts.map(p => p.revenue);
+
+  topChartInstance = new window.Chart(canvas.getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: t.sale_total,
+        data: values,
+        backgroundColor: 'rgba(37,99,235,0.8)',
+        borderRadius: 4,
+      }],
+    },
+    options: {
+      indexAxis: 'y', // Makes it a horizontal bar chart
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { beginAtZero: true, ticks: { callback: (v) => money(v), font: { size: 10 } } },
+        y: { grid: { display: false }, ticks: { font: { size: 11 } } },
       },
     },
   });

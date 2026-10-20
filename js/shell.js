@@ -132,7 +132,7 @@ function buildBellButton() {
 }
 
 function buildRecoveryButton() {
-  const btn = el('button', { class: 'hamburger-btn', type: 'button', 'aria-label': 'Recovery', title: 'Recovery' });
+  const btn = el('button', { class: 'hamburger-btn recovery-btn', type: 'button', 'aria-label': 'Recovery', title: 'Recovery' });
   btn.appendChild(svgIcon('recovery', 22));
   btn.addEventListener('click', () => navigate('recovery'));
   return btn;
