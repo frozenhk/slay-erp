@@ -16,22 +16,29 @@ export async function loadUserData() {
 
   setUser(user);
 
-  // FETCH IN PARALLEL FOR SPEED
   const [profileRes, membershipsRes] = await Promise.all([
     supabase.from('profiles').select('id, full_name, phone').eq('id', user.id).maybeSingle(),
-    supabase.from('memberships')
-      .select(`id, role, business_id, businesses(id, name, currency, logo_url, business_type, phone, email, address, invoice_prefix, invoice_footer, plan_code, subscription_status, trial_ends_at, current_period_start, current_period_end)`)
-      .order('created_at', { ascending: true })
+    supabase.from('memberships').select(`id, role, business_id, businesses(id, name, currency, logo_url, business_type, phone, email, address, invoice_prefix, invoice_footer, plan_code, subscription_status, trial_ends_at, current_period_start, current_period_end)`).order('created_at', { ascending: true })
   ]);
 
   setProfile(profileRes.data || { id: user.id, full_name: '', phone: null });
 
-  const list = (membershipsRes.data || []).map((m) => ({
+  const rawList = (membershipsRes.data || []).map((m) => ({
     membershipId: m.id,
     businessId: m.business_id,
     role: m.role,
     business: m.businesses || { id: m.business_id, name: 'Business' },
   }));
+
+  // DEDUPLICATE: If you have multiple roles for the same business, keep the highest one (owner > manager > others)
+  const roleWeight = { owner: 4, manager: 3, sales_agent: 2, warehouse: 1, accountant: 1 };
+  const uniqueMap = new Map();
+  for (const m of rawList) {
+    if (!uniqueMap.has(m.businessId) || (roleWeight[m.role] || 0) > (roleWeight[uniqueMap.get(m.businessId).role] || 0)) {
+      uniqueMap.set(m.businessId, m);
+    }
+  }
+  const list = Array.from(uniqueMap.values());
 
   setBusinesses(list);
   return { user, profile: profileRes.data, memberships: list };

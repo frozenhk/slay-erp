@@ -1,11 +1,10 @@
 export const ROLES = ['owner', 'manager', 'sales_agent', 'warehouse', 'accountant'];
-
 export const INVITE_ROLES = ['manager', 'sales_agent', 'warehouse', 'accountant'];
 
 const MENU = {
   owner: ['dashboard', 'sales', 'invoices', 'payments', 'products', 'inventory', 'customers', 'expenses', 'reports', 'more'],
   manager: ['dashboard', 'sales', 'invoices', 'payments', 'products', 'inventory', 'customers', 'expenses', 'reports', 'more'],
-  sales_agent: ['dashboard', 'sales', 'invoices', 'payments', 'products', 'inventory', 'customers', 'more'],
+  sales_agent: ['dashboard', 'sales', 'invoices', 'payments', 'customers', 'more'], // LOCKED
   warehouse: ['dashboard', 'products', 'inventory', 'more'],
   accountant: ['dashboard', 'sales', 'invoices', 'payments', 'customers', 'expenses', 'reports', 'more'],
 };
@@ -15,8 +14,8 @@ const ACCESS = {
   sales: ['owner', 'manager', 'sales_agent', 'accountant'],
   invoices: ['owner', 'manager', 'sales_agent', 'accountant'],
   payments: ['owner', 'manager', 'sales_agent', 'accountant'],
-  products: ['owner', 'manager', 'sales_agent', 'warehouse'],
-  inventory: ['owner', 'manager', 'warehouse'],
+  products: ['owner', 'manager', 'warehouse'], // LOCKED from sales_agent
+  inventory: ['owner', 'manager', 'warehouse'], // LOCKED from sales_agent
   customers: ['owner', 'manager', 'sales_agent', 'accountant'],
   expenses: ['owner', 'manager', 'accountant'],
   reports: ['owner', 'manager', 'accountant'],
@@ -24,6 +23,7 @@ const ACCESS = {
   settings: ['owner'],
   more: ['owner', 'manager', 'sales_agent', 'warehouse', 'accountant'],
   notifications: ['owner', 'manager', 'sales_agent', 'warehouse', 'accountant'],
+  recovery: ['owner', 'manager', 'sales_agent'], // Allowed for Sales Agents to follow up
 };
 
 export function canSeeMenu(role, id) {

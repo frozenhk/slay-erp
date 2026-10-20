@@ -21,6 +21,7 @@ const ICONS = {
   coins: ['M12 8c4.97 0 9-1.34 9-3s-4.03-3-9-3-9 1.34-9 3 4.03 3 9 3Z', 'M21 12c0 1.66-4.03 3-9 3s-9-1.34-9-3', 'M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5'],
   cog: ['M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z', 'M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z'],
   bell: ['M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9', 'M13.7 21a2 2 0 0 1-3.4 0'],
+  recovery: ['M20 12a8 8 0 1 1-8-8', 'M12 4v4h4', 'M12 8l4-4'], // Refresh/Recovery icon
   dot: ['M12 12h.01'],
 };
 
@@ -46,7 +47,7 @@ function getTitles() {
     more: t.nav_more, invoices: t.nav_invoices, payments: t.nav_payments,
     expenses: t.nav_expenses, users: t.users_title, settings: t.settings_title,
     notifications: t.notif_title, subscription: t.sub_title, pricing: t.sub_pricing_title,
-    admin: t.admin_businesses_title, // <--- ADDED ADMIN TITLE
+    recovery: 'Customer Recovery', admin: t.admin_businesses_title,
     login: t.auth_sign_in, signup: t.auth_sign_up, forgot: t.auth_forgot_title,
     'check-email': t.auth_check_email_title, reset: t.auth_forgot_title,
     switcher: t.biz_choose, onboarding: t.biz_welcome,
@@ -120,18 +121,21 @@ function buildSidebar() {
 
 function buildBellButton() {
   const wrap = el('div', { style: 'position:relative;' });
-  const btn = el('button', {
-    class: 'hamburger-btn', type: 'button', 'aria-label': t.notif_bell_label, title: t.notif_bell_label, id: 'bell-btn',
-  });
+  const btn = el('button', { class: 'hamburger-btn', type: 'button', 'aria-label': t.notif_bell_label, title: t.notif_bell_label, id: 'bell-btn' });
   btn.appendChild(svgIcon('bell', 22));
   btn.addEventListener('click', () => navigate('notifications'));
   wrap.appendChild(btn);
 
-  const badge = el('span', {
-    id: 'bell-badge', style: 'display:none;position:absolute;top:-2px;right:-2px;background:var(--error);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;min-width:18px;text-align:center;',
-  });
+  const badge = el('span', { id: 'bell-badge', style: 'display:none;position:absolute;top:-2px;right:-2px;background:var(--error);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;min-width:18px;text-align:center;' });
   wrap.appendChild(badge);
   return wrap;
+}
+
+function buildRecoveryButton() {
+  const btn = el('button', { class: 'hamburger-btn', type: 'button', 'aria-label': 'Recovery', title: 'Recovery' });
+  btn.appendChild(svgIcon('recovery', 22));
+  btn.addEventListener('click', () => navigate('recovery'));
+  return btn;
 }
 
 export function refreshBell() {
@@ -157,6 +161,13 @@ function buildTopbar() {
   bar.appendChild(left);
 
   const actions = el('div', { class: 'topbar-actions' });
+  
+  // Add Recovery Icon next to Bell
+  const role = state.role || 'owner';
+  if (['owner', 'manager', 'sales_agent'].includes(role)) {
+    actions.appendChild(buildRecoveryButton());
+  }
+
   actions.appendChild(buildBellButton());
 
   const avatar = el('button', { class: 'avatar-btn', id: 'avatar-btn', type: 'button', title: t.account_menu });
@@ -208,8 +219,7 @@ function openAccountMenu() {
   }
   const actions = [];
   if ((state.businesses || []).length > 1) {
-    actions.push({ label: t.account_switch, class: 'btn-secondary',
-      onClick: (close) => { close(); navigate('switcher'); } });
+    actions.push({ label: t.account_switch, class: 'btn-secondary', onClick: (close) => { close(); navigate('switcher'); } });
   }
   actions.push({
     label: t.auth_sign_out, class: 'btn-danger',
