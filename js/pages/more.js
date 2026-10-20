@@ -27,6 +27,7 @@ export async function morePage(container) {
 
   const tiles = [
     { id: 'recovery', label: 'Customer Recovery', desc: 'Win back inactive customers', icon: 'chart', visible: true },
+    { id: 'recovery', label: 'Customer Recovery', desc: 'Win back inactive customers', icon: 'chart', visible: true },
     { id: 'expenses', label: t.nav_expenses, desc: t.more_desc_expenses, icon: 'coins', visible: true },
     { id: 'users', label: t.users_title, desc: t.more_desc_users, icon: 'user', visible: canManageUsers(state.role) },
     { id: 'settings', label: t.settings_title, desc: t.more_desc_settings, icon: 'cog', visible: canEditBusiness(state.role) },

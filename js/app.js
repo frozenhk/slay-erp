@@ -35,8 +35,9 @@ import { notificationsPage } from './pages/notifications.js';
 import { subscriptionPage } from './pages/subscription.js';
 import { pricingPage } from './pages/pricing.js';
 import { adminBusinessesPage } from './pages/admin-businesses.js';
-import { recoveryPage } from './pages/recovery.js';
 import { adminSupportPage } from './pages/admin-support.js';
+import { recoveryPage } from './pages/recovery.js';
+import { recoveryRecordPage } from './pages/recovery-record.js';
 import { state, resetState, setCurrentBusiness } from './state.js';
 import { loadSession, loadUserData, routeAfterAuth } from './auth.js';
 import { buildShell, setActiveNav, refreshAvatar, refreshBell } from './shell.js';
@@ -116,12 +117,13 @@ function registerRoutes() {
   register('notifications', notificationsPage);
   register('subscription', subscriptionPage);
   register('pricing', pricingPage);
+  register('recovery', recoveryPage);
+  register('recovery/record', (c, p) => recoveryRecordPage(c, { id: p[0] }));
   register('admin', async (c, p) => {
     if (p && p[0] === 'businesses') return adminBusinessesPage(c);
     if (p && p[0] === 'support') return adminSupportPage(c);
     return navigate('more');
   });
-  register('recovery', recoveryPage);
   register('*', notfound);
 }
 
@@ -150,7 +152,6 @@ function guard(path) {
   refreshBell();
   saveLastRoute();
 
-  // This guarantees the widget exists on every page load/navigation
   if (state.user && !isResetFlow() && !PUBLIC_PAGES.includes(path)) {
     buildSupportWidget();
   }

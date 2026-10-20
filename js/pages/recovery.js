@@ -1,6 +1,5 @@
 import { el, toast } from '../ui.js';
 import { navigate } from '../router.js';
-import { t } from '../i18n.js';
 import { state } from '../state.js';
 import { money, date } from '../format.js';
 import { getRecoveryCandidates, createRecoveryRecord, listRecoveryRecords } from '../api/recovery.js';
@@ -10,9 +9,7 @@ export async function recoveryPage(container) {
   const wrap = el('div', { class: 'container col' });
   container.appendChild(wrap);
 
-  const header = el('div', { class: 'row-between' });
-  header.appendChild(el('h1', { text: 'Customer Recovery' }));
-  wrap.appendChild(header);
+  wrap.appendChild(el('h1', { text: 'Customer Recovery' }));
 
   const candidates = await getRecoveryCandidates(businessId, 30);
   const activeRecords = await listRecoveryRecords(businessId);
@@ -23,15 +20,14 @@ export async function recoveryPage(container) {
   });
 
   const grid = el('div', { class: 'dash-grid' });
-  const m1 = el('div', { class: 'metric-card' }, [
+  grid.appendChild(el('div', { class: 'metric-card' }, [
     el('div', { class: 'metric-value', text: String(candidates.length) }),
     el('div', { class: 'metric-label', text: 'Customers to Recover' })
-  ]);
-  const m2 = el('div', { class: 'metric-card' }, [
+  ]));
+  grid.appendChild(el('div', { class: 'metric-card' }, [
     el('div', { class: 'metric-value', text: money(potentialProfit) }),
     el('div', { class: 'metric-label', text: 'Potential Profit' })
-  ]);
-  grid.appendChild(m1); grid.appendChild(m2);
+  ]));
   wrap.appendChild(grid);
 
   if (activeRecords.length) {
@@ -40,7 +36,8 @@ export async function recoveryPage(container) {
     for (const r of activeRecords) {
       const card = el('div', { class: 'card', style: 'cursor:pointer;' });
       card.appendChild(el('div', { class: 'prod-name', text: r.customers.name }));
-      card.appendChild(el('div', { class: 'prod-meta', text: 'Status: ' + r.status + ' · Reason: ' + r.reason }));
+      card.appendChild(el('div', { class: 'prod-meta', text: 'Status: ' + r.status.replace('_', ' ').toUpperCase() + ' · Reason: ' + r.reason }));
+      card.onclick = () => navigate('recovery/record/' + r.id);
       list.appendChild(card);
     }
     wrap.appendChild(list);
