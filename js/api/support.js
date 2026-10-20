@@ -20,21 +20,22 @@ export async function sendMessage(ticketId, senderId, senderType, message) {
 }
 
 export async function listAllTickets() {
-  // 1. Fetch tickets and business names (this works fine)
+  // Fetch tickets WITHOUT profiles
   const { data: tickets, error } = await supabase.from('support_tickets')
     .select('*, businesses(name)')
     .order('updated_at', { ascending: false });
+    
   if (error) throw error;
   if (!tickets || !tickets.length) return [];
 
-  // 2. Fetch the profiles manually to avoid the join error
+  // Fetch profiles manually
   const userIds = [...new Set(tickets.map(t => t.user_id))];
   const { data: profiles } = await supabase.from('profiles').select('id, full_name').in('id', userIds);
   
   const profileMap = {};
   for (const p of profiles || []) profileMap[p.id] = p;
 
-  // 3. Merge them together
+  // Merge
   return tickets.map(t => ({
     ...t,
     profiles: profileMap[t.user_id] || null
