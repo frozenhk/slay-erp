@@ -67,7 +67,7 @@ function restoreRouteIfMissing() {
   if (saved) { try { location.hash = '#/' + saved; } catch (e) { } }
 }
 
-setInterval(() => { saveLastRoute(); if (!rawRoute() && state.user) restoreRouteIfMissing(); }, 500);
+setInterval(() => { saveLastRoute(); if (!rawRoute() && state.user) restoreRouteIfMissing(); }, 1000);
 window.addEventListener('hashchange', saveLastRoute);
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') saveLastRoute();
@@ -178,27 +178,14 @@ async function showInvitePopup() {
   });
 }
 
-// --- THE GLOBAL 2 SECOND AUTO-REFRESH ---
 function startAutoRefresh() {
   setInterval(() => {
-    // 1. Don't refresh if the user is typing in an input or textarea
     const active = document.activeElement;
-    if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) {
-      return;
-    }
-    
-    // 2. Don't refresh if a modal is open
-    if (document.querySelector('.modal-backdrop')) {
-      return;
-    }
-
-    // 3. Don't refresh if there's no user logged in
+    if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) return;
+    if (document.querySelector('.modal-backdrop')) return;
     if (!state.user) return;
-
-    // 4. Trigger the silent soft-refresh
     window.dispatchEvent(new Event('soft-refresh'));
-
-  }, 2000); // Every 2 seconds
+  }, 2000);
 }
 
 async function boot() {
@@ -244,7 +231,7 @@ async function boot() {
   }
 
   startRouter();
-  startAutoRefresh(); // Start the 2-second sync
+  startAutoRefresh();
 
   if (state.user) {
     showInvitePopup(); setInterval(showInvitePopup, 5000);

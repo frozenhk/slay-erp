@@ -2,34 +2,62 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Slay ERP</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <meta name="theme-color" content="#2563EB">
+<title>Slay ERP</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./css/tokens.css?v=46">
-<link rel="stylesheet" href="./css/base.css?v=46">
-<link rel="stylesheet" href="./css/components.css?v=46">
-<link rel="stylesheet" href="./css/account.css?v=46">
-<link rel="stylesheet" href="./css/products.css?v=46">
-<link rel="stylesheet" href="./css/inventory.css?v=46">
-<link rel="stylesheet" href="./css/customers.css?v=46">
-<link rel="stylesheet" href="./css/sales.css?v=46">
-<link rel="stylesheet" href="./css/invoice.css?v=46">
-<link rel="stylesheet" href="./css/dashboard.css?v=46">
-<link rel="stylesheet" href="./css/expenses.css?v=46">
-<link rel="stylesheet" href="./css/reports.css?v=46">
-<link rel="stylesheet" href="./css/users.css?v=46">
-<link rel="stylesheet" href="./css/support.css?v=46">
+<link rel="stylesheet" href="./css/tokens.css?v=52">
+<link rel="stylesheet" href="./css/base.css?v=52">
+<link rel="stylesheet" href="./css/components.css?v=52">
+<link rel="stylesheet" href="./css/account.css?v=52">
+<link rel="stylesheet" href="./css/products.css?v=52">
+<link rel="stylesheet" href="./css/inventory.css?v=52">
+<link rel="stylesheet" href="./css/customers.css?v=52">
+<link rel="stylesheet" href="./css/sales.css?v=52">
+<link rel="stylesheet" href="./css/invoice.css?v=52">
+<link rel="stylesheet" href="./css/dashboard.css?v=52">
+<link rel="stylesheet" href="./css/expenses.css?v=52">
+<link rel="stylesheet" href="./css/reports.css?v=52">
+<link rel="stylesheet" href="./css/users.css?v=52">
+<link rel="stylesheet" href="./css/support.css?v=52">
 <link rel="manifest" href="./manifest.json">
 <link rel="icon" href="./assets/logo.svg" type="image/svg+xml">
+<style>
+  /* Premium Universal Loading Screen */
+  #universal-loader {
+    position: fixed; inset: 0; background: #F8FAFC; z-index: 999999;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    transition: opacity 0.3s ease;
+  }
+  .loader-logo {
+    width: 64px; height: 64px; background: #2563EB; color: white;
+    border-radius: 16px; display: flex; align-items: center; justify-content: center;
+    font-size: 32px; font-weight: 700; font-family: system-ui, sans-serif;
+    margin-bottom: 24px; animation: pulse 1.5s infinite;
+  }
+  .loader-spinner {
+    width: 32px; height: 32px; border: 3px solid #E2E8F0;
+    border-top-color: #2563EB; border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  
+  #fatal-error { display: none; position: fixed; top: 0; left: 0; right: 0; background: #DC2626; color: white; padding: 20px; z-index: 999999; font-family: monospace; font-size: 14px; white-space: pre-wrap; }
+</style>
 </head>
 <body>
-<div id="global-loader" style="position:fixed;top:0;left:0;height:3px;background:var(--primary);width:0%;z-index:99999;transition:width 0.2s ease,opacity 0.3s ease;box-shadow:0 0 10px var(--primary);opacity:0;pointer-events:none;"></div>
-<div id="fatal-error" style="display:none;position:fixed;top:0;left:0;right:0;background:#DC2626;color:white;padding:20px;z-index:999999;font-family:monospace;font-size:14px;line-height:1.5;white-space:pre-wrap;"></div>
+<div id="universal-loader">
+  <div class="loader-logo">S</div>
+  <div class="loader-spinner"></div>
+</div>
+
+<div id="fatal-error"></div>
 <div id="offline-banner" style="display:none;position:fixed;top:0;left:0;right:0;background:#EA580C;color:#fff;padding:6px 12px;font-size:13px;text-align:center;z-index:9998;font-family:system-ui,sans-serif;">You are offline.</div>
 <div id="global-error" style="display:none;position:fixed;top:0;left:0;right:0;background:#DC2626;color:#fff;padding:10px 12px;z-index:99999;font-family:monospace;font-size:12px;line-height:1.4;max-height:40vh;overflow:auto;white-space:pre-wrap;word-break:break-all;transition:opacity .3s;"></div>
+
 <div id="app" class="app-shell">
   <aside id="sidebar" class="sidebar" aria-label="Main navigation"></aside>
   <header id="topbar" class="topbar"></header>
@@ -37,32 +65,23 @@
 </div>
 <div id="toasts" class="toasts" aria-live="polite" aria-atomic="true"></div>
 <div id="modal-root"></div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <script>
 (function(){
-  // 1. KILL ALL SERVICE WORKERS
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(function(registrations) {
-      for(let registration of registrations) {
-        registration.unregister();
-        console.log('ServiceWorker unregistered. Cache destroyed.');
-      } 
-    });
-  }
-
   var fatal = document.getElementById('fatal-error');
   window.addEventListener('error', function(e){
     fatal.style.display = 'block';
-    fatal.textContent = 'CRITICAL ERROR: ' + (e.message || 'Unknown') + '\nFile: ' + (e.filename || 'Unknown');
+    fatal.textContent = 'ERROR: ' + (e.message || 'Unknown') + '\nFile: ' + (e.filename || 'Unknown') + '\nLine: ' + (e.lineno || 'Unknown');
   });
   
-  var box = document.getElementById('global-error');
-  var hideTimer = null;
-  function show(msg){ box.textContent = msg; box.style.display = 'block'; box.style.opacity = '1'; if (hideTimer) clearTimeout(hideTimer); hideTimer = setTimeout(hide, 6000); }
-  function hide(){ box.style.opacity = '0'; setTimeout(function(){ if (box.style.opacity === '0') { box.style.display = 'none'; box.textContent = ''; } }, 300); }
+  var banner = document.getElementById('offline-banner');
+  function updateOnline(){ banner.style.display = navigator.onLine ? 'none' : 'block'; }
+  window.addEventListener('online', updateOnline); window.addEventListener('offline', updateOnline); updateOnline();
 })();
 </script>
-<script type="module" src="./js/app.js?v=46"></script>
+<!-- crossorigin="anonymous" is crucial for Safari compatibility with ES modules -->
+<script type="module" src="./js/app.js?v=52" crossorigin="anonymous" onload="document.getElementById('universal-loader').style.opacity='0'; setTimeout(()=>document.getElementById('universal-loader').remove(), 300);"></script>
 </body>
 </html>
