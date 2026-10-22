@@ -8,43 +8,28 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./css/tokens.css?v=52">
-<link rel="stylesheet" href="./css/base.css?v=52">
-<link rel="stylesheet" href="./css/components.css?v=52">
-<link rel="stylesheet" href="./css/account.css?v=52">
-<link rel="stylesheet" href="./css/products.css?v=52">
-<link rel="stylesheet" href="./css/inventory.css?v=52">
-<link rel="stylesheet" href="./css/customers.css?v=52">
-<link rel="stylesheet" href="./css/sales.css?v=52">
-<link rel="stylesheet" href="./css/invoice.css?v=52">
-<link rel="stylesheet" href="./css/dashboard.css?v=52">
-<link rel="stylesheet" href="./css/expenses.css?v=52">
-<link rel="stylesheet" href="./css/reports.css?v=52">
-<link rel="stylesheet" href="./css/users.css?v=52">
-<link rel="stylesheet" href="./css/support.css?v=52">
+<link rel="stylesheet" href="./css/tokens.css?v=54">
+<link rel="stylesheet" href="./css/base.css?v=54">
+<link rel="stylesheet" href="./css/components.css?v=54">
+<link rel="stylesheet" href="./css/account.css?v=54">
+<link rel="stylesheet" href="./css/products.css?v=54">
+<link rel="stylesheet" href="./css/inventory.css?v=54">
+<link rel="stylesheet" href="./css/customers.css?v=54">
+<link rel="stylesheet" href="./css/sales.css?v=54">
+<link rel="stylesheet" href="./css/invoice.css?v=54">
+<link rel="stylesheet" href="./css/dashboard.css?v=54">
+<link rel="stylesheet" href="./css/expenses.css?v=54">
+<link rel="stylesheet" href="./css/reports.css?v=54">
+<link rel="stylesheet" href="./css/users.css?v=54">
+<link rel="stylesheet" href="./css/support.css?v=54">
 <link rel="manifest" href="./manifest.json">
 <link rel="icon" href="./assets/logo.svg" type="image/svg+xml">
 <style>
-  /* Premium Universal Loading Screen */
-  #universal-loader {
-    position: fixed; inset: 0; background: #F8FAFC; z-index: 999999;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    transition: opacity 0.3s ease;
-  }
-  .loader-logo {
-    width: 64px; height: 64px; background: #2563EB; color: white;
-    border-radius: 16px; display: flex; align-items: center; justify-content: center;
-    font-size: 32px; font-weight: 700; font-family: system-ui, sans-serif;
-    margin-bottom: 24px; animation: pulse 1.5s infinite;
-  }
-  .loader-spinner {
-    width: 32px; height: 32px; border: 3px solid #E2E8F0;
-    border-top-color: #2563EB; border-radius: 50%;
-    animation: spin 1s linear infinite;
-  }
+  #universal-loader { position: fixed; inset: 0; background: #F8FAFC; z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.3s ease; }
+  .loader-logo { width: 64px; height: 64px; background: #2563EB; color: white; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 700; font-family: system-ui, sans-serif; margin-bottom: 24px; animation: pulse 1.5s infinite; }
+  .loader-spinner { width: 32px; height: 32px; border: 3px solid #E2E8F0; border-top-color: #2563EB; border-radius: 50%; animation: spin 1s linear infinite; }
   @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
   @keyframes spin { to { transform: rotate(360deg); } }
-  
   #fatal-error { display: none; position: fixed; top: 0; left: 0; right: 0; background: #DC2626; color: white; padding: 20px; z-index: 999999; font-family: monospace; font-size: 14px; white-space: pre-wrap; }
 </style>
 </head>
@@ -75,13 +60,16 @@
     fatal.style.display = 'block';
     fatal.textContent = 'ERROR: ' + (e.message || 'Unknown') + '\nFile: ' + (e.filename || 'Unknown') + '\nLine: ' + (e.lineno || 'Unknown');
   });
+  window.addEventListener('unhandledrejection', function(e){
+    fatal.style.display = 'block';
+    fatal.textContent = 'PROMISE ERROR: ' + (e.reason && e.reason.message ? e.reason.message : String(e.reason));
+  });
   
   var banner = document.getElementById('offline-banner');
   function updateOnline(){ banner.style.display = navigator.onLine ? 'none' : 'block'; }
   window.addEventListener('online', updateOnline); window.addEventListener('offline', updateOnline); updateOnline();
 })();
 </script>
-<!-- crossorigin="anonymous" is crucial for Safari compatibility with ES modules -->
-<script type="module" src="./js/app.js?v=52" crossorigin="anonymous" onload="document.getElementById('universal-loader').style.opacity='0'; setTimeout(()=>document.getElementById('universal-loader').remove(), 300);"></script>
+<script type="module" src="./js/app.js?v=54" crossorigin="anonymous" onload="document.getElementById('universal-loader').style.opacity='0'; setTimeout(()=>document.getElementById('universal-loader').remove(), 300);"></script>
 </body>
 </html>
